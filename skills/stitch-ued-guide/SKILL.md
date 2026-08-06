@@ -96,7 +96,7 @@ When describing **Context & Style**, use a clear color structure so Stitch produ
 
 **Quick color checklist**: Background defined? Primary/secondary/accent with hex? Semantic colors (success/alert/warning) if needed? Design system (Material 3, Fluent) or style (glassmorphism, minimal) mentioned?
 
-More ready-to-use prompts: see [docs/color-prompt-guide.md](../../docs/color-prompt-guide.md) in this repo, or the [original article](https://mp.weixin.qq.com/s/1SDFd7ZOPkbhpvHsmTJQjQ) for 20 curated prompts.
+More ready-to-use prompts: see [`docs/color-prompt-guide.md`](https://github.com/full-stack-skills/stitch-skills/blob/main/docs/color-prompt-guide.md) in this repo, or the [original article](https://mp.weixin.qq.com/s/1SDFd7ZOPkbhpvHsmTJQjQ) for 20 curated prompts.
 
 ## Device Guidelines
 
