@@ -29,7 +29,7 @@
 import puppeteer, { type Browser } from 'puppeteer';
 import path from 'node:path';
 import fs from 'node:fs';
-import { materializeCssomStyles } from './snapshot_cssom.ts';
+import { materializeCssomStyles } from './snapshot_cssom.js';
 
 // ---------------------------------------------------------------------------
 // Types
