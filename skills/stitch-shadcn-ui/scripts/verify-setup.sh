@@ -26,7 +26,7 @@ if [ -f "tailwind.config.js" ] || [ -f "tailwind.config.ts" ]; then
     echo -e "${GREEN}✓${NC} Tailwind config found"
 else
     echo -e "${RED}✗${NC} tailwind.config.js not found"
-    echo -e "  ${YELLOW}Install Tailwind:${NC} npm install -D tailwindcss postcss autoprefixer"
+    echo -e "  ${YELLOW}Install Tailwind CSS 3 (legacy setup only):${NC} npm install -D tailwindcss@3 postcss autoprefixer"
     exit 1
 fi
 

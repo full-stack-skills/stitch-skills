@@ -50,8 +50,8 @@ npm create vite@latest my-app -- --template react-ts
 cd my-app
 npm install
 
-# Install Tailwind CSS
-npm install -D tailwindcss postcss autoprefixer
+# Install Tailwind CSS 3 (this init -p workflow is specific to v3)
+npm install -D tailwindcss@3 postcss autoprefixer
 npx tailwindcss init -p
 
 # Initialize shadcn/ui
@@ -63,12 +63,12 @@ npx shadcn@latest add button
 
 ## Existing Project Setup
 
-### Step 1: Ensure Tailwind CSS is Installed
+### Step 1: Ensure Tailwind CSS 3 is Installed
 
-If Tailwind is not installed:
+This is the [Tailwind CSS 3 installation path](https://v3.tailwindcss.com/docs/guides/vite), including its JavaScript config and `@tailwind` directives. If Tailwind is not installed, use the version-aligned commands below. For an existing Tailwind 4 project, keep its current setup and use its version-specific installation guide; do not downgrade it with these commands.
 
 ```bash
-npm install -D tailwindcss postcss autoprefixer
+npm install -D tailwindcss@3 postcss autoprefixer
 npx tailwindcss init -p
 ```
 

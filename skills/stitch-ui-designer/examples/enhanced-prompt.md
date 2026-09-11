@@ -31,8 +31,8 @@ high-performance.
     - **Real-time Tracking**: Live stats from your wearable.
     - **AI Coaching**: Personalized workouts based on your performance.
     - **Community Challenges**: Compete with friends and stay motivated.
-4. **Social Proof Section**: Horizontal slider showing "Trusted by 500,000+
-   athletes" with partner logos.
+4. **Community Invitation**: Invite visitors to "Join a community challenge"
+   with an "Explore Challenges" call-to-action and a short explanation of participation.
 5. **Footer**: Quick links (Training, Pricing, Support), social icons, and
    legal text.
 
