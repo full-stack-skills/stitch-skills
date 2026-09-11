@@ -1,5 +1,6 @@
 ---
 name: stitch-shadcn-ui
+license: Apache-2.0
 description: Expert guidance for integrating and building applications with shadcn/ui. Component discovery, installation npx shadcn@latest add customization, blocks, and best practices. Use with Stitch-generated React apps for consistent, accessible UI built on Radix/Base UI and Tailwind.
 allowed-tools:
   - "shadcn*:*"

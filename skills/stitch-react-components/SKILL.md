@@ -1,5 +1,6 @@
 ---
 name: stitch-react-components
+license: Apache-2.0
 description: Convert Stitch designs into modular Vite/React components with validation and design token consistency. Uses Stitch MCP get_screen to retrieve design JSON and HTML; supports high-reliability fetch via scripts; enforces modular structure, type safety, and theme-mapped Tailwind.
 allowed-tools:
   - "stitch*:*"

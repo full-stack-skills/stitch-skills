@@ -1,5 +1,6 @@
 ---
 name: stitch-remotion
+license: Apache-2.0
 description: Generate walkthrough videos from Stitch projects using Remotion. Retrieves screens via Stitch MCP list_projects list_screens get_screen downloads screenshots, builds Remotion composition with transitions and text overlays. Use with stitch-mcp-* for project/screen discovery.
 allowed-tools:
   - "stitch*:*"

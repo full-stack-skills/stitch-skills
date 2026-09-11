@@ -1,7 +1,7 @@
 ---
 name: stitch-mcp-generate-screen-from-text
 description: Generates high-fidelity UI screens or wireframes from text descriptions. The core Text-to-UI engine.
-license: Complete terms in LICENSE.txt
+license: Apache-2.0
 allowed-tools:
   - "stitch*:*"
   - "Read"
