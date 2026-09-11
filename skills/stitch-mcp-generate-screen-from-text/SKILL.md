@@ -93,6 +93,12 @@ After the generation completes, retrieve the resulting screen(s) via:
 1.  `list_screens` with `projectId` in the format `projects/{id}`.
 2.  `get_screen` with the selected `screenId` to fetch screenshot / html assets.
 
+## Interrupted writes and deletion safety
+
+`generate_screen_from_text`, `edit_screens` and `generate_variants` are non-idempotent writes. If a write times out or its connection is interrupted, **do not resubmit the same write call**. Reconcile the actual remote state first with `get_project`, `list_screens` and `get_screen`; issue a new write only when those reads show it is still required.
+
+Deleting a project requires the user's explicit confirmation immediately before the delete call. Never infer deletion approval from a request to generate, edit, retry or clean up a design.
+
 ## Keywords
 
 **English keywords:**

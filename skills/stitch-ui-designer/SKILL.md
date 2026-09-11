@@ -108,7 +108,9 @@ ALWAYS execute immediately (no confirmation loop):
 3. For edits/variants, resolve `selectedScreenIds` using `list_screens`/`get_screen` before mutation. For variants, the pinned upstream supports `variantCount` 1–5, `creativeRange` REFINE/EXPLORE/REIMAGINE and aspects LAYOUT/COLOR_SCHEME/IMAGES/TEXT_FONT/TEXT_CONTENT; use only values accepted by the live tool.
 4. Surface returned `outputComponents` text descriptions and suggestions. List screens and call `get_screen` to verify actual screen IDs and retrieve screenshot/HTML; do not assume local HTML exists.
 5. Download returned assets to the target `.stitch/designs` with screen-ID/slug filenames; preserve useful previous versions. Inspect actual screenshots against requested layout, copy, device and constraints. Use focused edits for a local mismatch; regenerate only when the fundamental layout is wrong.
-6. Update `.stitch/metadata.json` with returned IDs, device types, system information and sync time. Report what was actually generated, downloaded and visually checked. On tool failure, preserve prior assets, report the error and stop dependent calls; do not retry ambiguous generation blindly.
+6. Update `.stitch/metadata.json` with returned IDs, device types, system information and sync time. Report what was actually generated, downloaded and visually checked. On tool failure, preserve prior assets, report the error and stop dependent calls.
+7. Treat `generate_screen_from_text`, `edit_screens` and `generate_variants` as non-idempotent writes. If one times out or the connection drops, **do not submit the same write call again**. First reconcile remote state with `get_project`, `list_screens` and, for candidate results, `get_screen`; only make a new write after the observed state proves it is still needed.
+8. Deleting a Stitch project is destructive. Obtain the user's explicit confirmation immediately before the delete call; an earlier request to design, edit or clean up is not confirmation to delete.
 
 ### 6) Prompt-only Workflow — Tools Not Available
 
