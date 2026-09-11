@@ -1,5 +1,5 @@
 # Design System: Taste Standard
-**Skill:** stitch-design-taste
+**Skill:** stitch-taste-design
 
 ---
 

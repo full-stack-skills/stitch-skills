@@ -40,8 +40,8 @@ const MIME_MAP: Record<string, string> = {
   '.cur': 'image/x-icon',
 };
 
-function getMime(filePath: string): string {
-  return MIME_MAP[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
+function getMime(filePath: string): string | null {
+  return MIME_MAP[path.extname(filePath).toLowerCase()] || null;
 }
 
 // ---------------------------------------------------------------------------
@@ -222,21 +222,24 @@ function extractCssUrls(text: string): CssUrlRef[] {
 // Local path resolution
 // ---------------------------------------------------------------------------
 function resolveLocalFile(localPath: string, baseDir: string): string | null {
-  const candidates = [localPath];
-  if (baseDir) {
-    candidates.push(path.join(baseDir, localPath.replace(/^\//, '')));
-  }
+  try {
+    const resourceRoot = fs.realpathSync(baseDir || process.cwd());
+    const rootRelativePath = localPath.replace(/^[/\\]+/, '');
+    const candidate = path.resolve(resourceRoot, rootRelativePath);
+    const resolved = fs.realpathSync(candidate);
+    const relative = path.relative(resourceRoot, resolved);
 
-  for (const candidate of candidates) {
-    try {
-      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-        return candidate;
-      }
-    } catch {
-      // Permission errors, etc. — skip
+    if (relative.startsWith(`..${path.sep}`) || relative === '..' || path.isAbsolute(relative)) {
+      return null;
     }
+    if (!fs.statSync(resolved).isFile() || !getMime(resolved)) {
+      return null;
+    }
+    return resolved;
+  } catch {
+    // Missing, inaccessible, or escaping paths are not eligible for inlining.
+    return null;
   }
-  return null;
 }
 
 /**
@@ -262,6 +265,9 @@ function readFileAtomic(
       return { size: stat.size, tooLarge: true };
     }
     const mime = getMime(filePath);
+    if (!mime) {
+      return null;
+    }
     const b64 = fs.readFileSync(fd).toString('base64');
     return { size: stat.size, mime, b64 };
   } finally {

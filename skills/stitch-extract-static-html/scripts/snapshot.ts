@@ -29,6 +29,7 @@
 import puppeteer, { type Browser } from 'puppeteer';
 import path from 'node:path';
 import fs from 'node:fs';
+import { materializeCssomStyles } from './snapshot_cssom.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -966,51 +967,10 @@ async function snapshot(opts: Opts): Promise<void> {
     // serialized as clean text in <style> textContent. Additionally, Vite HMR
     // injects <style> tags containing JS client import syntax that break CSS
     // parsers. This step extracts all rules across all document.styleSheets,
-    // cleans up dev HMR style tags, and injects a unified style bundle.
+    // cleans up dev HMR style tags, and replaces each captured owner in place
+    // so stylesheet media, relative URL bases, and cascade order are retained.
     console.log('🎨 Capturing all CSSOM rules from document.styleSheets...');
-    const cssomCount = await page.evaluate(() => {
-      let totalRules = 0;
-      let extraCssText = '/* --- EXTRACTED CSSOM BUNDLE --- */\n';
-      const extractedNodes = new Set<Node>();
-      for (const sheet of Array.from(document.styleSheets)) {
-        try {
-          let sheetCss = '';
-          for (const rule of Array.from(sheet.cssRules)) {
-            sheetCss += rule.cssText + '\n';
-            totalRules++;
-          }
-          if (sheetCss.trim().length > 0) {
-            extraCssText += sheetCss + '\n';
-            if (sheet.ownerNode) {
-              extractedNodes.add(sheet.ownerNode);
-            }
-          }
-        } catch (e) {
-          // Ignore cross-origin stylesheet security errors
-        }
-      }
-      if (extraCssText.trim().length > 0) {
-        // Only remove <style data-vite-dev-id> and <link rel="stylesheet"> whose CSSOM rules we successfully captured
-        document.querySelectorAll('style[data-vite-dev-id], link[rel="stylesheet"]').forEach(el => {
-          if (extractedNodes.has(el) || el.hasAttribute('data-vite-dev-id')) {
-            el.remove();
-          }
-        });
-        // Remove any <style> tag containing Vite HMR client syntax (createHotContext / import.meta.hot)
-        document.querySelectorAll('style').forEach(el => {
-          if (el.textContent && (el.textContent.includes('createHotContext') || el.textContent.includes('import.meta.hot'))) {
-            el.remove();
-          }
-        });
-        // Remove relative font preload links that cause 404 errors in static viewers
-        document.querySelectorAll('link[rel="preload"][as="font"]').forEach(el => el.remove());
-        const combinedStyle = document.createElement('style');
-        combinedStyle.id = 'extracted-cssom-bundle';
-        combinedStyle.textContent = extraCssText;
-        document.head.appendChild(combinedStyle);
-      }
-      return totalRules;
-    });
+    const cssomCount = await page.evaluate(materializeCssomStyles);
     console.log(`   ✅ Captured ${cssomCount} rules from document.styleSheets`);
 
     // -----------------------------------------------------------------------
