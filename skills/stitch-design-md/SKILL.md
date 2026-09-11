@@ -1,6 +1,6 @@
 ---
 name: stitch-design-md
-description: Analyze Stitch projects and synthesize a semantic design system into DESIGN.md. Uses Stitch MCP list_projects list_screens get_screen get_project to retrieve screens and project metadata; outputs natural-language design tokens for consistent Stitch screen generation. Use with stitch-ui-prompt-architect and stitch-loop for multi-page consistency.
+description: Extract and validate a semantic DESIGN.md from existing Stitch screens or local code/HTML when the user needs a documented design system. Use stitch-ui-prompt-architect for prompt writing and stitch-ui-designer for screen generation.
 allowed-tools:
   - "stitch*:*"
   - "Read"
@@ -23,9 +23,14 @@ You are an expert **Design Systems Lead**. Your goal is to analyze Stitch projec
 
 - Stitch MCP Server configured (see https://stitch.withgoogle.com/docs/mcp/guide/)
 - A Stitch project with at least one designed screen
+- Alternatively, user-provided local code/HTML and visual assets whose design should be documented; this path does not require a Stitch project.
 - Stitch Effective Prompting Guide: https://stitch.withgoogle.com/docs/learn/prompting/
 
 ## Retrieval and Networking
+
+### When the source is local code/HTML
+
+Read the provided markup, CSS/Tailwind configuration and representative screenshots. Record `Source` with repo-relative paths and revision when available; record which values are observed and which are proposed. Do not invent a Project ID or claim MCP retrieval. If only code is available, label visual atmosphere as inferred and request/produce an authorized preview before claiming visual confirmation. For precise CSS extraction, use `stitch-extract-design-md`; this entry owns semantic synthesis and validation. Publishing project-level tokens belongs to `stitch-manage-design-system`.
 
 Use Stitch MCP (or skills `stitch-mcp-list-projects`, `stitch-mcp-get-project`, `stitch-mcp-list-screens`, `stitch-mcp-get-screen`) in this order.
 
@@ -52,8 +57,8 @@ If the user pastes a **Stitch design page link** (e.g. `https://stitch.withgoogl
    - Identify target screen by title; extract Screen ID from `name`
 
 4. **Metadata fetch**:
-   - Call `[prefix]:get_screen` with `projectId` and `screenId` (numeric IDs)
-   - Use returned `screenshot.downloadUrl`, `htmlCode.downloadUrl`, `width`, `height`, `deviceType`, and project `designTheme`
+   - Call `[prefix]:get_screen` with `projectId` and `screenId` as the exact returned ID strings
+   - Use returned `screenshot.downloadUrl`, `htmlCode.downloadUrl`, `width`, `height`, `deviceType`, and project `designTheme`. Preserve IDs as strings rather than coercing hexadecimal screen IDs to numbers; do not assume cached HTML is current.
 
 5. **Asset download** (also after URL-based get_screen):
    - Use `web_fetch` or equivalent to download HTML from `htmlCode.downloadUrl` and optionally screenshot from `screenshot.downloadUrl`
@@ -118,6 +123,20 @@ Shadows and layers: "Flat," "Whisper-soft diffused shadows," "Heavy drop shadows
 (Language and color references to copy into Stitch prompts; see examples/DESIGN.md.)
 ```
 
+For local sources, replace the Project ID line with `**Source:**` and actual source paths. Template brackets are instructions, not permitted final output. Keep Section 6 as the local reusable prompt contract in addition to the official five-section structure.
+
+## Validation / lint
+
+This snapshot of official `design-md` provides a structure and semantic constraints, but no lint executable. Apply these local lint checks before delivery:
+
+1. Sections 1–5 are populated: atmosphere, palette/roles, typography, component styling, layout. Section 6 preserves reusable generation notes.
+2. Every color has a descriptive name, actual hex value and functional role; font weights, spacing, radii and shadows agree with cited source assets. Translate implementation classes into visual language.
+3. Document source paths or real project/screen IDs and observation limits. No invented tokens, credentials, signed download URLs, empty placeholders or claimed visual QA without an inspected image.
+4. Compare buttons/cards/inputs and responsive navigation against representative screens. Distinguish observed behavior from suggested hover/focus or breakpoint values.
+5. Read the completed DESIGN.md as input to `stitch-ui-prompt-architect`: verify it can recover palette roles and layout invariants without source code. A missing role, conflicting token or unexplained source difference fails lint; resolve it before claiming completion.
+
+On asset retrieval failure, preserve existing DESIGN.md, report the missing evidence and emit a clearly marked partial draft. Local lint is not proof of live rendering or accessibility compliance.
+
 ## Integration with This Repo
 
 - **First time:** Generate `DESIGN.md` with this skill from an existing Stitch screen.
@@ -149,28 +168,3 @@ Shadows and layers: "Flat," "Whisper-soft diffused shadows," "Heavy drop shadows
 - [Examples](examples/usage.md)
 - [Example DESIGN.md](examples/DESIGN.md) — Full sample output
 - [Stitch Prompting Guide](https://stitch.withgoogle.com/docs/learn/prompting/)
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。

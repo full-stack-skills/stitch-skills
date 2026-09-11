@@ -33,6 +33,8 @@ The Furniture Collections List embodies a **sophisticated, minimalist sanctuary*
 - **Buttons:** Subtly rounded (8px), Deep Muted Teal-Navy (#294056), comfortable padding; hover darkens.
 - **Cards:** Gently rounded (12px), whisper-soft shadow on hover, generous internal padding.
 - **Inputs:** 1px border Soft Warm Gray, Warm Cream background, 8px roundness, focus glow.
+- **Navigation:** Horizontal links with a visible active indicator; at mobile widths use a labelled menu trigger and drawer. Validate actual breakpoint behavior against the source before copying this example.
+- **Product cards:** Image, product name, brief material/finish descriptor and price in that order; preserve the image aspect ratio and consistent content padding.
 
 ## 5. Layout Principles
 
@@ -48,4 +50,6 @@ When creating new screens with Stitch:
 - **Shapes:** "Subtly rounded corners" / "Whisper-soft diffused shadows on hover"
 - **Spacing:** "Generous breathing room" and "expansive whitespace"
 
-Copy this section (or the full DESIGN.md Section 6) into each Stitch prompt for consistency.
+In the inline-token fallback, copy this section into each Stitch prompt for consistency.
+
+For a generation tool with an applied project-level designSystem, send these tokens through `stitch-manage-design-system` and keep only content/layout in the generation prompt. For targeted edits, name the component and requested delta precisely.

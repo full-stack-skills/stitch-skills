@@ -1,6 +1,6 @@
 ---
 name: stitch-ui-designer
-description: The Master Orchestrator. Handles the end-to-end flow of designing and generating UI screens. Use this for all "Design X" requests.
+description: Orchestrate end-to-end Stitch screen generation, image import, edits and variants when the user asks to create or change actual Stitch designs. For prompt-only requests use stitch-ui-prompt-architect; for DESIGN.md extraction use stitch-design-md.
 license: Complete terms in LICENSE.txt
 allowed-tools:
   - "stitch*:*"
@@ -12,7 +12,7 @@ allowed-tools:
 
 # Stitch Designer (Master Skill)
 
-This is the entry point for all UI design tasks. It acts as the **"Orchestrator Agent"** that autonomously plans and executes the design workflow.
+This is the execution entry point for Stitch design tasks. It coordinates the existing spec, contract and prompt skills before calling Stitch MCP.
 
 ## When to use this skill
 
@@ -43,6 +43,8 @@ Determine the task type:
 
 - **New screen**: design + generate a new UI screen.
 - **Refine / Beautify**: modify an existing screen while preserving layout and information architecture.
+- **Image / mockup**: import with `stitch-upload-to-stitch`, then refine the returned screen using `edit_screens`.
+- **Variants**: use `stitch-ui-design-variants` for variant planning and the available `generate_variants` tool for actual generation.
 
 ### 2) Design Spec Workflow (Brain)
 
@@ -76,6 +78,10 @@ Decision rules:
 
 ### 4) Prompt Assembly Workflow (Pen)
 
+First resolve the target project (reuse the supplied ID or use `list_projects`; create only when a new workspace is needed). Discover `list_design_systems`: if a system is applied, pass its `designSystem` ID separately from the prompt. If no system exists and the tools support it, use `stitch-manage-design-system` to establish the requested tokens before generating. Pass the observed design-system state and intended mode to the prompt architect.
+
+For **new-screen generation with an applied project-level system**, the execution prompt contains platform, content, layout and interactions; remove color/font/theme/radius tokens from framework prefixes and DESIGN.md text. For **prompt-only or legacy tools without design-system support**, retain the explicit token block described below and label the fallback. For **targeted edits**, precise requested color adjustments are allowed. Do not silently replace an existing project's design system.
+
 Invoke `stitch-ui-prompt-architect` with the user request and (if any) Design Spec + contract prefix. The output must conform to **Prompt Quality Standard: Optimized Prompt Structure** (see below) so that Stitch receives a precise "construction blueprint" rather than a vague idea.
 
 **Minimum structure** (always present):
@@ -91,16 +97,18 @@ Invoke `stitch-ui-prompt-architect` with the user request and (if any) Design Sp
 ...
 ```
 
-**When the request describes an app or multi-section screen**, the assembled prompt MUST additionally follow the **Optimized Prompt Structure** (inspired by enhance-prompt best practice: Project Overview + Design System (required) + Page Structure and Function). See section **Prompt Quality Standard** below.
+**When the request describes an app or multi-section screen**, keep Project Overview and Page Structure and Function. The Design System block below applies to the inline-token fallback; with a project-level system, carry its ID as tool metadata instead.
 
 ### 5) Execution Workflow (Hand) — Tools Available
 
 ALWAYS execute immediately (no confirmation loop):
 
-1. Create project: `create_project`
-2. Generate screen: `generate_screen_from_text`
-3. List screens: `list_screens`
-4. Get the target screen: `get_screen` (export screenshot + HTML assets)
+1. Resolve/reuse project and applicable design system, then assemble the prompt through `stitch-ui-prompt-architect`.
+2. Dispatch by intent: `generate_screen_from_text` for text; `stitch-upload-to-stitch` then `edit_screens` for an image; `edit_screens` for existing screen adjustments; `generate_variants` for requested alternatives. Preserve screen IDs as strings. Use `deviceType` `MOBILE`, `DESKTOP` or `TABLET` from the brief/metadata; inspect the connected tool schema before passing optional fields.
+3. For edits/variants, resolve `selectedScreenIds` using `list_screens`/`get_screen` before mutation. For variants, the pinned upstream supports `variantCount` 1–5, `creativeRange` REFINE/EXPLORE/REIMAGINE and aspects LAYOUT/COLOR_SCHEME/IMAGES/TEXT_FONT/TEXT_CONTENT; use only values accepted by the live tool.
+4. Surface returned `outputComponents` text descriptions and suggestions. List screens and call `get_screen` to verify actual screen IDs and retrieve screenshot/HTML; do not assume local HTML exists.
+5. Download returned assets to the target `.stitch/designs` with screen-ID/slug filenames; preserve useful previous versions. Inspect actual screenshots against requested layout, copy, device and constraints. Use focused edits for a local mismatch; regenerate only when the fundamental layout is wrong.
+6. Update `.stitch/metadata.json` with returned IDs, device types, system information and sync time. Report what was actually generated, downloaded and visually checked. On tool failure, preserve prior assets, report the error and stop dependent calls; do not retry ambiguous generation blindly.
 
 ### 6) Prompt-only Workflow — Tools Not Available
 
@@ -155,9 +163,9 @@ To make Stitch **accurately** implement the design, the final prompt (from step 
 - One short paragraph: **what** the product/screen is, **who** it is for, **style** (e.g. modern minimal, professional and trustworthy, bright and fresh), and **key attributes** (ease of use, information readability, full localized UI, etc.).
 - Example: "An AI ingredient-list analysis tool for end users, turning chemical terms into plain language via image recognition and composition parsing. Modern minimal design, emphasis on ease of use and readability, full localized interface."
 
-### 2) Design System — Required
+### 2) Design System — Inline-token fallback only
 
-The prompt MUST include an explicit design system block so Stitch does not guess colors, type, or components. Include:
+When no applied project-level system is available, the prompt includes an explicit design system block. When a system is applied, send its ID and omit this token block from new-screen generation. For the fallback, include:
 
 | Block | Content | Example |
 |-------|---------|--------|
@@ -193,12 +201,12 @@ For **each** page or major section:
 Verify (and if missing, request the prompt-architect to add):
 
 - [ ] **Project overview** present for app/product-level requests? (one paragraph: what, who, style, key attributes)
-- [ ] **Design system (required)** present? Platform, Theme, **Color scheme with #hex**, **Typography (px + font + weight)**, **Component style** (buttons, cards, icons)
+- [ ] **Design-system delivery** correct? Applied project-level system: ID sent, no duplicate tokens in new-screen prompt. Inline fallback: Platform, Theme, **Color scheme with #hex**, **Typography (px + font + weight)** and **Component style** present.
 - [ ] **Per-page/section**: **Core function** one line + **areas** (top nav / hero / function / action / footer) with **concrete elements** and specific copy?
 - [ ] **Layout** and **Components** sections still populated? (macro layout + component list)
 - [ ] No vague placeholders? ("a button" → "primary CTA button 'Sign In'"; "some list" → "vertical list of Workout Cards with thumbnail, duration, Start button")
 
-If any of the above is missing, **re-invoke** `stitch-ui-prompt-architect` with explicit instructions to fill the Optimized Prompt Structure (project overview, design system with hex/px, page structure with core function and area-level details), then re-run the checklist before execution.
+If a required field is missing, **re-invoke** `stitch-ui-prompt-architect` with the observed delivery mode and missing field, then re-run the checklist before execution.
 
 ---
 
@@ -213,6 +221,9 @@ orchestrator, design agent, ui designer, master skill, design flow, stitch pilot
 
 ## References
 
+- [Design mappings](references/design-mappings.md) and [prompt keywords](references/prompt-keywords.md) — choose precise component terms; apply visual descriptors only in the appropriate design-system/edit channel.
+- [Enhanced prompt](examples/enhanced-prompt.md) — project-level system example with the canonical three sections.
+
 - [Workflow End-to-End](examples/workflow_end_to_end.md)
 - [Workflows Reference](references/workflows.md)
 - [Optimized Prompt Output Examples (ZH + EN)](examples/optimized_prompt_output_examples.md) — full Chinese and English examples of the optimized prompt (project overview + design system + page structure and function) from the blog "Trae+Stitch MCP+Skills: My New AI Programming Paradigm".
@@ -223,35 +234,3 @@ orchestrator, design agent, ui designer, master skill, design flow, stitch pilot
 - 支持中文文档和中文注释
 - 示例代码兼容国内开发环境
 - 提供中文 FAQ 和常见问题解答
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。

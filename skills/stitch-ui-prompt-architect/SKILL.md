@@ -1,6 +1,6 @@
 ---
 name: stitch-ui-prompt-architect
-description: Builds Stitch-ready prompts from vague UI ideas or from Design Spec and User Request. Outputs sectioned Context, Layout, and Components. Supports DESIGN.md and framework contract prefix.
+description: Enhance vague UI ideas or an existing Design Spec into a Stitch prompt with Context, Layout and Components when the requested deliverable is prompt text. Supports platform, numbered sections, concrete copy, color roles and framework contracts; actual generation belongs to stitch-ui-designer.
 allowed-tools:
   - "Read"
   - "Write"
@@ -35,6 +35,8 @@ When injecting framework contract prefix (Path B) or translating component keywo
 
 ## When to Use
 
+This entry writes prompts; it does not call generation tools, create projects or claim a screen was generated. In an end-to-end task, `stitch-ui-designer` invokes it as the prompt stage.
+
 - **Path A**: User wants to polish a UI prompt before sending to Stitch; improve a prompt that produced poor results; add design system consistency to a simple idea; structure a vague concept into an actionable prompt.
 - **Path B**: Orchestrator has already produced a Design Spec (e.g. from `stitch-ui-design-spec-generator`) and needs a final [Context]/[Layout]/[Components] prompt; or user requests a prompt for a named framework (uView, Element Plus, Layui, Bootstrap, Vant).
 
@@ -59,7 +61,9 @@ Evaluate what's missing:
 
 ### Step 2: Check for DESIGN.md
 
-- **If DESIGN.md exists**: Read it; extract design system block (palette, typography, component styles); include as "DESIGN SYSTEM (REQUIRED)" in output.
+First determine the supplied execution mode. If the orchestrator confirms an applied **project-level** designSystem for new-screen generation, carry the system ID separately and output only content/layout/interactions in the prompt: no hex colors, color roles, fonts, theme or radius tokens. Keep extracted tokens in the design-system handoff. If no applied system is available (prompt-only/legacy tool fallback), use the inline DESIGN SYSTEM block below. For a targeted edit of an existing screen, include only the requested precise visual delta. Do not assume that a local DESIGN.md proves a remote system is applied.
+
+- **If DESIGN.md exists**: Read it; extract palette, typography and component styles. Include "DESIGN SYSTEM (REQUIRED)" only in the inline-token fallback; otherwise pass tokens to the orchestrator's system handoff.
 - **If DESIGN.md does not exist**: Add a tip at the end: "For consistent designs across multiple screens, create a DESIGN.md using the `stitch-design-md` skill."
 
 ### Step 3: Apply Enhancements
@@ -71,9 +75,10 @@ Evaluate what's missing:
 
 ### Step 4: Format Output (Path A)
 
-Structure the enhanced prompt as:
+Both paths return `[Context]`, `[Layout]`, `[Components]` in that order. Platform is explicit; the layout uses numbered sections; components use concrete labels and interaction states. For the inline-token fallback, use:
 
 ```markdown
+[Context]
 [One-line description of the page purpose and vibe]
 
 **DESIGN SYSTEM (REQUIRED):**
@@ -84,10 +89,14 @@ Structure the enhanced prompt as:
 - Text Primary: [Color description] (#hex)
 - [Additional design tokens...]
 
+[Layout]
 **Page Structure:**
 1. **[Section]:** [Description]
 2. **[Section]:** [Description]
 ...
+
+[Components]
+[Named controls with actual UI copy and behavior]
 ```
 
 **Output options**: Return as text; or if the user requests, write to `next-prompt.md` (for `stitch-loop`) or a custom file.
@@ -121,11 +130,11 @@ Return a single prompt with:
 ### Construction Logic
 
 **1. Context & Style**  
-Combine `deviceType`, `designMode`, `theme`, `styleKeywords`.  
+Combine `deviceType`, `designMode`, `theme`, `styleKeywords` in the inline-token fallback. With an applied system, retain platform and purpose and send visual tokens through the system channel.
 Example: "Mobile High-Fidelity login screen. Cyberpunk aesthetic. Dark mode with neon blue accents."
 
 **2. Design Contract Prefix (Hard Constraints)**  
-If the user request includes a named style (e.g. "uview 风格"), prepend the corresponding contract to `[Context]`:
+If the user request includes a named style (e.g. "uview 风格"), select the corresponding contract. For the inline-token fallback prepend it to `[Context]`; for an applied system keep structural/component constraints in the prompt and send its visual tokens to the system handoff:
 
 | Keyword | Use skill output as prefix |
 |---------|----------------------------|
@@ -153,11 +162,14 @@ Use specific copy (e.g. "Welcome back, Agent") instead of placeholder "Text".
 
 ## Example (Path A: Vague → Enhanced)
 
+This example uses inline tokens because no applied project-level design system was provided.
+
 **Input:** "make me a login page"
 
 **Output:**
 
 ```markdown
+[Context]
 A clean, trustworthy login page with a centered form and subtle branding.
 
 **DESIGN SYSTEM (REQUIRED):**
@@ -171,23 +183,53 @@ A clean, trustworthy login page with a centered form and subtle branding.
 - Buttons: Subtly rounded (8px), full-width on form
 - Cards: Gently rounded (12px), soft shadow for elevation
 
+[Layout]
 **Page Structure:**
 1. **Header:** Minimal logo, centered
 2. **Login Card:** Centered form with email, password fields, "Forgot password?" link
 3. **Submit Button:** Primary blue "Sign In" button
 4. **Footer:** "Don't have an account? Sign up" link
+
+[Components]
+Email and Password inputs with persistent labels; "Forgot password?" link;
+"Sign In" primary submit action; validation errors beside the corresponding field.
 ```
+
+## Targeted edit and output validation
+
+Input: "In Stitch, add a search bar to the existing header."
+
+```text
+[Context]
+Targeted edit to the existing web screen. Preserve the rest of the page.
+[Layout]
+1. Header: Place the search control immediately before the user avatar.
+[Components]
+Search input labelled "Search projects", leading magnifying-glass icon,
+placeholder "Search by project name", clear action and visible focus state.
+```
+
+For an explicitly requested visual edit, add its exact value only to that control. Do not invent product claims, customer counts or private example data. Use a clear assumption when platform or copy cannot be inferred; request information only when it changes the intended result.
+
+Before returning, check all three sections, explicit platform, numbered layout, concrete UI copy and requested behavior. Verify color name + hex + functional role in inline mode, and verify no duplicate theme tokens in an applied-system generation prompt. Missing DESIGN.md is not an error: use stated proposals and suggest `stitch-design-md` when existing assets need synthesis. Missing tools still yields prompt text without a claimed API result.
 
 ---
 
 ## Example (Path B: Spec → Prompt)
 
-> "Mobile login screen for a Fintech App. Clean minimalist aesthetic. Light mode.  
-> Layout: Center-aligned vertical stack.  
-> Header: Brand logo 'PayFast' and 'Welcome' title.  
-> Form: Input field for 'Email' with mail icon. Input field for 'Password' with eye toggle.  
-> Actions: Full-width primary blue button 'Sign In'. 'Forgot Password?' link.  
-> Footer: 'Create Account' link."
+Given a mobile login Design Spec with an applied project-level system:
+
+```text
+[Context]
+Mobile login screen for PayFast. The system ID is passed separately by the orchestrator.
+[Layout]
+1. Header: PayFast brand and "Welcome" title.
+2. Form: Center-aligned vertical stack.
+3. Footer: "Create Account" link.
+[Components]
+Email input with mail icon; Password input with visibility toggle;
+full-width "Sign In" action; "Forgot Password?" link; inline validation errors.
+```
 
 ---
 
@@ -209,30 +251,5 @@ A clean, trustworthy login page with a centered form and subtle branding.
 - [KEYWORDS](references/KEYWORDS.md) — UI/UX keyword palettes for Path A.
 - [Official documentation (by framework)](#official-documentation-by-framework) — Authoritative docs for BootstrapVue, Element Plus, Layui-Vue, Vant, uView 2, uView Pro.
 
-## References
-
 - [Examples](examples/usage.md)
 - [Keywords](references/KEYWORDS.md)
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题

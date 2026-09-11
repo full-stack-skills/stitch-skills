@@ -12,10 +12,10 @@
 Follow these steps in order:
 
 1. Preflight: detect whether Stitch MCP tools are available.
-2. Classify intent: new screen vs refine/beautify.
+2. Classify intent: text generation, image import, existing-screen edit or variants.
 3. Generate Design Spec: invoke `stitch-ui-design-spec-generator`.
 4. Apply design contracts (if a named design system is present).
-5. Assemble prompt: invoke `stitch-ui-prompt-architect` and produce a prompt with `[Context] [Layout] [Components]`. For app/product-level or multi-section screens, the assembled prompt **must** follow the **Optimized Prompt Structure** (Project Overview + Design System (required) + Page Structure and Function) so Stitch receives a precise construction blueprint; see SKILL.md section "Prompt Quality Standard".
+5. Assemble prompt: invoke `stitch-ui-prompt-architect` with `[Context] [Layout] [Components]` and the observed design-system mode. New-screen generation with an applied project-level system passes its ID separately and omits duplicate tokens; inline tokens apply to prompt-only/legacy fallback. See SKILL.md's Prompt Quality Standard.
 6. Execute (tools available) or output prompt only (tools unavailable).
 
 ## Decision points
@@ -51,12 +51,12 @@ Contract mode rules:
 
 Do not ask for confirmation loops. Execute immediately.
 
-1. Create project: `create_project`
-2. Generate screen: `generate_screen_from_text`
-3. List screens: `list_screens`
-4. Get target screen: `get_screen` (export screenshot + HTML assets)
+1. Reuse the target project or resolve it using `list_projects`; create only when needed.
+2. Resolve project-level design system using `list_design_systems` and `stitch-manage-design-system` when supported.
+3. Follow the intent-specific dispatch in SKILL.md: generate text, import image then edit, edit selected screen IDs, or generate variants.
+4. Surface outputComponents, retrieve list_screens/get_screen assets, inspect them and update local metadata.
 
-Output format must follow: `references/output-patterns.md` -> Template A.
+Output format follows SKILL.md -> Template A, including actual checks and limitations.
 
 ## Prompt-only workflow (tools unavailable)
 
@@ -68,4 +68,4 @@ Stop execution. Do not fake results.
    - `[Components]`
 2. Output only the prompt for copy/paste.
 
-Output format must follow: `references/output-patterns.md` -> Template B.
+Output format follows SKILL.md -> Template B.

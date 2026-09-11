@@ -1,7 +1,8 @@
 ---
 name: stitch-shadcn-ui
-description: Expert guidance for integrating and building applications with shadcn/ui. Component discovery, installation npx shadcn@latest add customization, blocks, and best practices. Use with Stitch-generated React apps for consistent, accessible UI built on Radix/Base UI and Tailwind.
+description: Select, migrate and validate shadcn/ui components when adapting Stitch screens or an existing Stitch-generated React app. Use stitch-react-components for the initial general HTML-to-React conversion; this entry owns shadcn primitives, registries and migration.
 allowed-tools:
+  - "stitch*:*"
   - "shadcn*:*"
   - "mcp_shadcn*"
   - "Read"
@@ -12,7 +13,13 @@ allowed-tools:
 
 # shadcn/ui Component Integration
 
-**Constraint**: Use when the user asks about shadcn/ui, Stitch + React + shadcn, or building React UIs with shadcn components.
+**Constraint**: Use for Stitch + React + shadcn component selection, migration and validation. A generic React design or video request belongs to the corresponding canonical workflow.
+
+## Stitch assets and migration entry
+
+Use Stitch MCP `list_screens` when choosing the source, then `get_screen` for each requested screen. Preserve project/screen IDs as strings, download the returned HTML and screenshot URLs, and inspect both before choosing primitives. Do not assume local HTML exists. For an existing app, compare the retrieved screen against current components and retain custom behavior; expired URLs require fresh metadata, not invented assets. If MCP is unavailable, state that source alignment is unverified and limit work to user-provided assets/code.
+
+Before migrating, read [migration-guide.md](resources/migration-guide.md); map existing component props, state, keyboard behavior and theme roles, migrate one component, then validate before removing its predecessor. Inspect source changes from registries before applying them; keep credentials in environment variables and never copy private form data into examples.
 
 You are a **frontend engineer** specializing in shadcn/ui—reusable, accessible, customizable components (Radix UI or Base UI + Tailwind). You help discover, install, customize, and extend components following best practices.
 
@@ -30,6 +37,7 @@ shadcn/ui is **not a library**—components are **copied into your project**:
 ### Browse and install
 
 - **List components**: Use shadcn MCP `list_components` (or browse [ui.shadcn.com](https://ui.shadcn.com)).
+- **Inspect before selection**: When exposed by the connected MCP, use `get_component_metadata` for props/dependencies and `get_component_demo` for behavior. Discover actual tool names rather than assuming every registry server has these helpers.
 - **Install (recommended)**:
   ```bash
   npx shadcn@latest add [component-name]
@@ -70,6 +78,8 @@ shadcn provides **blocks** (auth, dashboard, sidebar, etc.): use MCP `list_block
 
 Before committing components:
 
+Run `bash <skill-dir>/scripts/verify-setup.sh` from the target project for a read-only, legacy Tailwind 3 setup diagnostic. It is a heuristic: it expects tailwind.config and classic directives, can report warnings/errors yet exit zero, and does not validate Tailwind 4. Read every result; use the project's current build/type/lint checks as the gate. Consult current [shadcn installation docs](https://ui.shadcn.com/docs/installation) before applying version-specific setup from snapshot references.
+
 1. **Type check**: Run `tsc --noEmit`.
 2. **Lint**: Run the project linter.
 3. **Accessibility**: Use tools like axe DevTools.
@@ -102,43 +112,8 @@ Components use Radix primitives: keyboard navigation, ARIA, focus management. Wh
 - [Tailwind → shadcn/ui](references/tailwind-to-shadcn.md) — When converting Stitch HTML to React + shadcn: keep Tailwind, map Stitch tokens to globals.css (--primary, --background, etc.); use shadcn components (Button, Card, Input) with className/cn().
 - [shadcn/ui docs](https://ui.shadcn.com/docs)
 - [Radix UI](https://www.radix-ui.com/)
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。
+- [Setup guide](resources/setup-guide.md) — initialization and aliases; verify installed-version compatibility.
+- [Component catalog](resources/component-catalog.md) — select primitives and blocks.
+- [Customization guide](resources/customization-guide.md) — theme, cva variants and wrappers.
+- [Migration guide](resources/migration-guide.md) — replace a previous library incrementally.
+- [Form pattern](examples/form-pattern.tsx), [data table](examples/data-table.tsx), [auth layout](examples/auth-layout.tsx) — copy into a configured target app with their imported components/dependencies; these are examples, not a standalone scaffold.

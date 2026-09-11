@@ -1,6 +1,6 @@
 ---
 name: stitch-react-components
-description: Convert Stitch designs into modular Vite/React components with validation and design token consistency. Uses Stitch MCP get_screen to retrieve design JSON and HTML; supports high-reliability fetch via scripts; enforces modular structure, type safety, and theme-mapped Tailwind.
+description: Convert or sync Stitch HTML screens to modular Vite/React components when the requested deliverable is React code with token and navigation validation. Use stitch-shadcn-ui for shadcn component migration and stitch-remotion for videos.
 allowed-tools:
   - "stitch*:*"
   - "Bash"
@@ -25,13 +25,14 @@ You are a **frontend engineer** turning Stitch designs into clean, modular React
 ## Retrieval and Networking
 
 1. **Discover Stitch MCP prefix**: Run `list_tools` to find the prefix (e.g. `mcp_stitch__stitch:`).
-2. **Fetch screen metadata**: Call `[prefix]:get_screen` with `projectId` and `screenId` (numeric IDs) to get design JSON, `htmlCode.downloadUrl`, `screenshot.downloadUrl`, dimensions, deviceType.
+2. **Fetch screen metadata**: Use `list_screens` to enumerate the requested screens, then call `[prefix]:get_screen` for each with `projectId` and `screenId` preserved as strings (screen IDs may be hexadecimal). Obtain `htmlCode.downloadUrl`, `screenshot.downloadUrl`, dimensions and deviceType. Do not assume local HTML exists or is current.
 3. **High-reliability HTML download**: AI fetch tools can fail on Google Cloud Storage URLs. Use Bash to run the skill script:
    ```bash
    bash scripts/fetch-stitch.sh "<htmlCode.downloadUrl>" "temp/source.html"
    ```
    This uses `curl -L` for redirects and TLS. Ensure the URL is quoted.
 4. **Visual reference**: Use `screenshot.downloadUrl` to confirm layout and details.
+5. **Sync provenance**: For each requested screen, store HTML and screenshot under the target app's `.stitch/designs/`; preserve existing assets unless refresh is authorized. Use cached assets only when their provenance matches and reuse is intended. On Google image URLs supporting sizing, request `=w{width}` from returned metadata and inspect the actual image dimensions. Fetch `get_project`; update the app's `.stitch/metadata.json` with projectId, title, deviceType, `Last Sync Time` (ISO time), and a screens map (ID, label, sourceScreen, dimensions, canvasPosition). Mirror only within an authorized workspace.
 
 ## Architectural Rules
 
@@ -39,8 +40,11 @@ You are a **frontend engineer** turning Stitch designs into clean, modular React
 - **Logic isolation**: Put event handlers and business logic in `src/hooks/`.
 - **Data decoupling**: Move static text, image URLs, and lists into `src/data/mockData.ts`.
 - **Type safety**: Every component must have a `Readonly` TypeScript interface `[ComponentName]Props`.
-- **Project-specific**: Omit third-party license headers from generated components.
+- **Project-specific**: Do not add unrelated license headers to new code; retain required notices when adapting upstream source.
 - **Style mapping**: Extract `tailwind.config` from HTML `<head>`; sync with `resources/style-guide.json` if present; use theme-mapped Tailwind classes instead of raw hex.
+- **Fresh tokens**: The bundled style-guide is an example, not the project's palette. Extract colors, fonts, spacing, radii and typography into a project-local style-guide; verify it against this project's HTML and DESIGN.md before drafting. Preserve the installed Skill resources.
+- **Navigation**: Replace placeholder `href="#"` with React Router `<Link>` routes (or the existing router's equivalent). Make the top-bar logo/title a home link; wire sidebar and bottom navigation with active states. Check desktop home navigation when mobile bottom bars use `md:hidden`.
+- **Dark mode**: Where the target supports dark mode, map every color role to matching `dark:` variants; verify both themes instead of copying fixed sample colors.
 
 ## Execution Steps
 
@@ -48,7 +52,7 @@ You are a **frontend engineer** turning Stitch designs into clean, modular React
 2. **Data layer**: Create `src/data/mockData.ts` from the design content.
 3. **Component drafting**: Use `resources/component-template.tsx` as base; replace all `StitchComponent` with the real component name.
 4. **Wiring**: Update the app entry (e.g. `App.tsx`) to render the new components.
-5. **Quality check**: Run `npm run validate <file_path>` if the project has a validate script; verify against `resources/architecture-checklist.md`; run `npm run dev` to confirm visually.
+5. **Quality check**: Use the bundled [AST validator](scripts/validate.js): install its locked dependencies with `npm ci --prefix <skill-dir>`, then `node <skill-dir>/scripts/validate.js <absolute-component.tsx>` for each component/page. It checks parseability, a Props interface, and literal className hex values; it does not prove Readonly use, routing or visual correctness. Run the target project's TypeScript check (`tsc --noEmit` through its installed toolchain), [architecture checklist](resources/architecture-checklist.md), and proportional visual checks. Report skipped checks explicitly.
 
 ## Integration with This Repo
 
@@ -58,7 +62,7 @@ You are a **frontend engineer** turning Stitch designs into clean, modular React
 ## Troubleshooting
 
 - **Fetch errors**: Quote the URL in the bash command to avoid shell issues; ensure `scripts/fetch-stitch.sh` is executable.
-- **Validation errors**: Fix missing Props interfaces and hardcoded styles per the AST report; follow `references/architecture-checklist.md`.
+- **Validation errors**: Fix missing Props interfaces and hardcoded styles per the AST report; follow [resources/architecture-checklist.md](resources/architecture-checklist.md).
 
 ## Keywords
 
@@ -73,44 +77,6 @@ You are a **frontend engineer** turning Stitch designs into clean, modular React
     - [resources/architecture-checklist.md](resources/architecture-checklist.md)
     - [resources/component-template.tsx](resources/component-template.tsx)
 - **Scripts**: [scripts/fetch-stitch.sh](scripts/fetch-stitch.sh)
+- **API and sync mapping**: [resources/stitch-api-reference.md](resources/stitch-api-reference.md)
+- **Component example**: [examples/gold-standard-card.tsx](examples/gold-standard-card.tsx) — adapt routes and project tokens before use; structural AST success alone is insufficient.
 - [Stitch API / MCP](https://stitch.withgoogle.com/docs/mcp/guide/)
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。
