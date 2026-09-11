@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env tsx
 /**
  * extract_inline_html.ts — Convert JSX/React mock files to self-contained HTML.
  *
@@ -6,7 +6,7 @@
  * Replaces the old extract_inline_html.py script.
  *
  * Usage:
- *   npx tsx extract_inline_html.ts \
+ *   node <SKILL_DIR>/scripts/run.mjs extract \
  *     --page src/MockPage.jsx:home.html:"Home Page" \
  *     --index-css src/index.css \
  *     --extra-css index.html \
@@ -27,14 +27,16 @@
  *   --json            Output machine-readable JSON stats
  */
 
-import * as parser from '@babel/parser';
-import traverse from '@babel/traverse';
-import generate from '@babel/generator';
 import fs from 'node:fs';
 import path from 'node:path';
 import https from 'node:https';
 import http from 'node:http';
 import type { Node } from '@babel/types';
+import { pathToFileURL } from 'node:url';
+import dns from 'node:dns/promises';
+import { BlockList, isIP } from 'node:net';
+import { safeUrl, safeError } from './safe_diagnostics.js';
+import { requireProjectDependency, ProjectDependencyError } from './project_dependencies.mjs';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -122,7 +124,7 @@ function parseArgs(): Opts {
       case '--json': opts.json = true; break;
       case '--help':
         console.log(`
-Usage: npx tsx extract_inline_html.ts --page <spec> [options]
+Usage: node <SKILL_DIR>/scripts/run.mjs extract --page <spec> [options]
 
 Options:
   --page             src_file:dst_filename:title (repeatable)
@@ -242,163 +244,100 @@ function isImageUrl(url: string): boolean {
 
 
 
-/**
- * Validate that a URL is safe for outbound requests (SSRF protection).
- * Blocks private/internal network addresses and non-HTTP protocols.
- * URLs parsed from HTML files could be attacker-controlled, so we must
- * ensure they only target public internet hosts.
- */
-function isSafeUrl(parsed: URL): boolean {
-  // Only allow http and https protocols
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return false;
-  }
+// Fail closed for local, reserved, multicast and transition address ranges.
+const nonPublic = new BlockList();
+for (const [address, prefix] of [
+  ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8],
+  ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.0.0.0', 24], ['192.0.2.0', 24],
+  ['192.88.99.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15],
+  ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 4], ['240.0.0.0', 4],
+] as const) nonPublic.addSubnet(address, prefix, 'ipv4');
+for (const [address, prefix] of [
+  ['2001::', 23], ['2001:db8::', 32], ['2002::', 16], ['3fff::', 20],
+] as const) nonPublic.addSubnet(address, prefix, 'ipv6');
+const globalIPv6 = new BlockList();
+globalIPv6.addSubnet('2000::', 3, 'ipv6');
 
-  const hostname = parsed.hostname.toLowerCase();
-
-  // Block localhost variants
-  if (hostname === 'localhost' || hostname === '[::1]') {
-    return false;
-  }
-
-  // Block private/reserved IPv4 ranges
-  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4Match) {
-    const [, a, b] = ipv4Match.map(Number);
-    if (
-      a === 127 ||          // 127.0.0.0/8  (loopback)
-      a === 10 ||           // 10.0.0.0/8   (private)
-      a === 0 ||            // 0.0.0.0/8    (unspecified)
-      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12 (private)
-      (a === 192 && b === 168) ||          // 192.168.0.0/16 (private)
-      (a === 169 && b === 254)             // 169.254.0.0/16 (link-local)
-    ) {
-      return false;
-    }
-  }
-
-  return true;
+function isPublicAddress(address: string): boolean {
+  const family = isIP(address);
+  if (family === 4) return !nonPublic.check(address, 'ipv4');
+  // IPv4-mapped, ULA, link-local, NAT64 and unspecified addresses are outside 2000::/3.
+  return family === 6 && globalIPv6.check(address, 'ipv6') && !nonPublic.check(address, 'ipv6');
 }
 
-// Intentional outbound requests: this function fetches remote images
-// referenced in HTML source files and embeds them as base64 data URIs to
-// produce self-contained HTML snapshots. URLs are validated by isSafeUrl()
-// to block SSRF against private/internal networks.  [CodeQL js/file-access-to-http]
-function fetchAndEncode(url: string, timeout: number, redirectCount = 0): Promise<string> {
-  if (imgCache.has(url)) return Promise.resolve(imgCache.get(url)!);
-  if (!isImageUrl(url)) {
-    imgCache.set(url, url);
-    return Promise.resolve(url);
-  }
+const FALLBACK_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
-  // Redirect-loop protection
-  if (redirectCount >= MAX_REDIRECTS) {
-    const fallback =
-      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    console.warn(`  WARN: Too many redirects (${MAX_REDIRECTS}) <- ${url.slice(0, 70).replace(/\n|\r/g, '')}...`);
-    imgCache.set(url, fallback);
-    return Promise.resolve(fallback);
+export async function fetchAndEncode(url: string, timeout: number, redirectCount = 0): Promise<string> {
+  if (imgCache.has(url)) return imgCache.get(url)!;
+  if (!isImageUrl(url)) return url;
+  const fail = (reason: string): string => {
+    console.warn(`  WARN: ${reason} <- ${safeUrl(url)}`);
+    imgCache.set(url, FALLBACK_IMAGE);
+    return FALLBACK_IMAGE;
+  };
+  if (redirectCount >= MAX_REDIRECTS) return fail('Too many redirects');
+
+  let parsed: URL;
+  let answer: { address: string; family: number };
+  try {
+    parsed = new URL(url);
+    if (!['https:', 'http:'].includes(parsed.protocol)) return fail('Blocked non-HTTP URL');
+    const hostname = parsed.hostname.replace(/^\[|\]$/g, '');
+    const literalFamily = isIP(hostname);
+    const answers = literalFamily ? [{ address: hostname, family: literalFamily }] : await dns.lookup(hostname, { all: true, verbatim: true });
+    if (answers.length === 0 || answers.some((item) => !isPublicAddress(item.address) || item.family !== isIP(item.address))) {
+      return fail('Blocked non-public address');
+    }
+    answer = answers[0];
+  } catch (error) {
+    return fail(`URL or DNS validation failed (${safeError(error)})`);
   }
 
   return new Promise((resolve) => {
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(url);
-    } catch {
-      const fallback =
-        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      console.warn(`  WARN: Invalid URL: ${url.slice(0, 70).replace(/\n|\r/g, '')}...`);
-      imgCache.set(url, fallback);
-      resolve(fallback);
-      return;
-    }
-
-    // SSRF protection: block requests to private/internal networks
-    if (!isSafeUrl(parsedUrl)) {
-      const fallback =
-        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      console.warn(`  WARN: Blocked request to non-public URL: ${url.slice(0, 70).replace(/\n|\r/g, '')}...`);
-      imgCache.set(url, fallback);
-      resolve(fallback);
-      return;
-    }
-
-    const client = parsedUrl.protocol === 'https:' ? https : http;
-    const req = client.get(
-      url,
-      {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SnapshotBot/2.0)' },
-        timeout,
+    const client = parsed.protocol === 'https:' ? https : http;
+    const req = client.get(parsed, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SnapshotBot/2.0)' },
+      timeout,
+      // Keep the original hostname for Host and TLS certificate/SNI validation.
+      // Disable pooling and DNS re-resolution: only this validated answer may connect.
+      agent: false,
+      lookup: (_hostname, options, callback) => {
+        if (options.all) callback(null, [answer]);
+        else callback(null, answer.address, answer.family);
       },
-      (resp) => {
-        if (
-          resp.statusCode! >= 300 &&
-          resp.statusCode! < 400 &&
-          resp.headers.location
-        ) {
-          // Resolve relative redirect URLs
-          let redirectUrl: string;
-          try {
-            redirectUrl = new URL(resp.headers.location, url).href;
-          } catch {
-            redirectUrl = resp.headers.location;
-          }
-          // Consume response body to free the socket
-          resp.resume();
-          fetchAndEncode(redirectUrl, timeout, redirectCount + 1).then(resolve);
-          return;
-        }
-
-        if (resp.statusCode! >= 400) {
-          const fallback =
-            'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-          console.warn(
-            `  WARN: HTTP ${resp.statusCode} <- ${url.slice(0, 70).replace(/\n|\r/g, '')}...`,
-          );
-          resp.resume();
-          imgCache.set(url, fallback);
-          resolve(fallback);
-          return;
-        }
-
-        const chunks: Buffer[] = [];
-        resp.on('data', (d: Buffer) => chunks.push(d));
-        resp.on('end', () => {
-          const buf = Buffer.concat(chunks);
-          const ct = resp.headers['content-type'] || 'image/jpeg';
-          const result = `data:${ct};base64,${buf.toString('base64')}`;
+    }, (resp) => {
+      if (resp.statusCode! >= 300 && resp.statusCode! < 400 && resp.headers.location) {
+        resp.resume();
+        let redirect: string;
+        try { redirect = new URL(resp.headers.location, parsed).href; }
+        catch { resolve(fail('Invalid redirect')); return; }
+        fetchAndEncode(redirect, timeout, redirectCount + 1).then((result) => {
           imgCache.set(url, result);
-          console.log(
-            `  Embedded ${buf.length.toLocaleString()} bytes <- ${url.slice(0, 70).replace(/\n|\r/g, '')}...`,
-          );
           resolve(result);
         });
-        resp.on('error', (e: Error) => {
-          const fallback =
-            'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-          console.warn(`  WARN: Stream error: ${e.message.replace(/\n|\r/g, '')} <- ${url.slice(0, 70).replace(/\n|\r/g, '')}...`);
-          imgCache.set(url, fallback);
-          resolve(fallback);
-        });
-      },
-    );
-
-    req.on('error', (e: Error) => {
-      const fallback =
-        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      console.warn(`  WARN: ${e.message.replace(/\n|\r/g, '')} <- ${url.slice(0, 70).replace(/\n|\r/g, '')}...`);
-      imgCache.set(url, fallback);
-      resolve(fallback);
+        return;
+      }
+      if (resp.statusCode! >= 400) {
+        resp.resume();
+        resolve(fail(`HTTP ${resp.statusCode}`));
+        return;
+      }
+      const chunks: Buffer[] = [];
+      resp.on('data', (chunk: Buffer) => chunks.push(chunk));
+      resp.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        // An upstream Content-Type must not inject HTML attributes into the data URI.
+        const rawType = resp.headers['content-type']?.split(';')[0].trim();
+        const contentType = rawType && /^image\/[a-z0-9.+-]+$/i.test(rawType) ? rawType : 'image/jpeg';
+        const result = `data:${contentType};base64,${buffer.toString('base64')}`;
+        imgCache.set(url, result);
+        console.log(`  Embedded ${buffer.length} bytes <- ${safeUrl(url)}`);
+        resolve(result);
+      });
+      resp.on('error', (error: Error) => resolve(fail(`Stream error (${safeError(error)})`)));
     });
-
-    req.on('timeout', () => {
-      req.destroy();
-      const fallback =
-        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      console.warn(`  WARN: Timeout after ${timeout}ms <- ${url.slice(0, 70).replace(/\n|\r/g, '')}...`);
-      imgCache.set(url, fallback);
-      resolve(fallback);
-    });
+    req.on('error', (error: Error) => resolve(fail(`Request failed (${safeError(error)})`)));
+    req.on('timeout', () => { req.destroy(); resolve(fail('Request timed out')); });
   });
 }
 
@@ -488,63 +427,43 @@ function replaceCssUrlsInText(
 // ---------------------------------------------------------------------------
 // Image & CSS url() embedding with concurrency
 // ---------------------------------------------------------------------------
-async function embedImages(html: string, concurrency: number, timeout: number): Promise<string> {
+function decodeAttribute(value: string): string {
+  // Decode the exact entities emitted by escapeAttribute, once only.
+  const entities: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" };
+  return value.replace(/&(?:amp|lt|gt|quot|#39);/g, (entity) => entities[entity]);
+}
+
+export async function embedImages(html: string, concurrency: number, timeout: number): Promise<string> {
   const limit = createLimiter(concurrency);
-
-  // --- Embed <img src="https://..."> ---
-  const srcMatches = [...html.matchAll(/src="(https?:\/\/[^"]+)"/g)];
-  const srcImageMatches = srcMatches.filter((m) => isImageUrl(m[1]));
-
-  // Prefetch all URLs concurrently
-  await Promise.all(
-    srcImageMatches.map((m) => limit(() => fetchAndEncode(m[1], timeout))),
-  );
-
-  // Replace (cache is now warm — synchronous lookups)
-  for (const m of srcImageMatches) {
-    const encoded = imgCache.get(m[1]);
-    if (encoded && encoded !== m[1]) {
-      html = html.replace(m[0], `src="${encoded}"`);
-    }
+  const attributes = [...html.matchAll(/\b(src|poster)="(https?:\/\/[^"]+)"/g)];
+  await Promise.all(attributes.map((match) => limit(async () => {
+    const url = decodeAttribute(match[2]);
+    await fetchAndEncode(url, timeout);
+  })));
+  for (const match of attributes) {
+    const url = decodeAttribute(match[2]);
+    const encoded = imgCache.get(url);
+    if (encoded && encoded !== url) html = html.replace(match[0], match[1] + '="' + escapeAttribute(encoded) + '"');
   }
 
-  // --- Embed CSS url("https://...") using robust parser ---
-  const cssUrlRefs = extractCssUrls(html);
-  const httpUrlRefs = cssUrlRefs.filter(
-    (ref) =>
-      (ref.url.startsWith('http://') || ref.url.startsWith('https://')) &&
-      isImageUrl(ref.url),
-  );
-
-  // Prefetch all CSS url() references concurrently
-  await Promise.all(
-    httpUrlRefs.map((ref) => limit(() => fetchAndEncode(ref.url, timeout))),
-  );
-
-  // Replace from end-to-start to preserve indices
-  const replacements: Array<{ start: number; end: number; dataUri: string }> = [];
-  for (const ref of httpUrlRefs) {
-    const encoded = imgCache.get(ref.url);
-    if (encoded && encoded !== ref.url) {
-      replacements.push({ start: ref.start, end: ref.end, dataUri: encoded });
-    }
+  const embedCss = async (css: string): Promise<string> => {
+    const refs = extractCssUrls(css).filter((ref) => /^https?:\/\//.test(ref.url) && isImageUrl(ref.url));
+    await Promise.all(refs.map((ref) => limit(() => fetchAndEncode(ref.url, timeout))));
+    const replacements = refs.flatMap((ref) => {
+      const encoded = imgCache.get(ref.url);
+      return encoded && encoded !== ref.url ? [{ start: ref.start, end: ref.end, dataUri: encoded }] : [];
+    });
+    return replaceCssUrlsInText(css, replacements);
+  };
+  // CSS in a style element is raw text; CSS in an HTML attribute is entity-encoded.
+  for (const match of [...html.matchAll(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi)]) {
+    const replacement = match[1] + await embedCss(match[2]) + match[3];
+    html = html.replace(match[0], () => replacement);
   }
-  if (replacements.length > 0) {
-    html = replaceCssUrlsInText(html, replacements);
+  for (const match of [...html.matchAll(/\bstyle="([^"]*)"/g)]) {
+    const replacement = 'style="' + escapeAttribute(await embedCss(decodeAttribute(match[1]))) + '"';
+    html = html.replace(match[0], () => replacement);
   }
-
-  // --- Embed <video poster="https://..."> ---
-  const posterMatches = [...html.matchAll(/poster="(https?:\/\/[^"]+)"/g)];
-  await Promise.all(
-    posterMatches.map((m) => limit(() => fetchAndEncode(m[1], timeout))),
-  );
-  for (const m of posterMatches) {
-    const encoded = imgCache.get(m[1]);
-    if (encoded && encoded !== m[1]) {
-      html = html.replace(m[0], `poster="${encoded}"`);
-    }
-  }
-
   return html;
 }
 
@@ -581,7 +500,9 @@ const VOID_ELEMENTS = new Set([
   'link', 'meta', 'param', 'source', 'track', 'wbr',
 ]);
 
-function jsxToHtml(jsxSource: string): string | null {
+export function jsxToHtml(jsxSource: string): string | null {
+  const parser = requireProjectDependency('@babel/parser') as typeof import('@babel/parser');
+  const traverse = (requireProjectDependency('@babel/traverse') as typeof import('@babel/traverse')).default;
   let ast;
   try {
     ast = parser.parse(jsxSource, {
@@ -590,7 +511,7 @@ function jsxToHtml(jsxSource: string): string | null {
       plugins: ['jsx', 'typescript'],
     });
   } catch (e: unknown) {
-    console.error(`  Babel parse error: ${(e as Error).message}`);
+    console.error(`  Babel parse error: ${safeError(e)}`);
     return null;
   }
 
@@ -664,6 +585,19 @@ function jsxToHtml(jsxSource: string): string | null {
   return renderNode(returnedJSX);
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function escapeAttribute(value: string): string {
+  return escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function escapeStyle(value: string): string {
+  // <style> is raw text: HTML entities would change CSS; use a CSS escape.
+  return value.replace(/</g, '\\3c ');
+}
+
 function renderNode(node: any): string {
   if (!node) return '';
 
@@ -673,11 +607,11 @@ function renderNode(node: any): string {
     case 'JSXFragment':
       return node.children.map(renderNode).join('');
     case 'JSXText':
-      return node.value;
+      return escapeHtml(node.value);
     case 'JSXExpressionContainer':
       return renderExpression(node.expression);
     case 'StringLiteral':
-      return node.value;
+      return escapeHtml(node.value);
     default:
       return '';
   }
@@ -689,12 +623,12 @@ function renderExpression(expr: any): string {
     case 'JSXEmptyExpression':
       return '';
     case 'StringLiteral':
-      return expr.value;
+      return escapeHtml(expr.value);
     case 'NumericLiteral':
       return String(expr.value);
     case 'TemplateLiteral':
       // Flatten template literals — just join the quasis
-      return expr.quasis.map((q: any) => q.value.raw).join('');
+      return escapeHtml(expr.quasis.map((q: any) => q.value.cooked ?? q.value.raw).join(''));
     default:
       console.warn(`  WARN: Unhandled JSX expression of type "${expr.type}" inside child node.`);
       return '';
@@ -703,6 +637,16 @@ function renderExpression(expr: any): string {
 
 function renderElement(node: any): string {
   const tagName = getTagName(node.openingElement);
+  if (tagName === 'style') {
+    const css = node.children.map((child: any) => {
+      if (child.type === 'JSXText') return child.value;
+      const expression = child.expression;
+      if (expression?.type === 'StringLiteral') return expression.value;
+      if (expression?.type === 'TemplateLiteral') return expression.quasis.map((q: any) => q.value.cooked ?? q.value.raw).join('');
+      return '';
+    }).join('');
+    return `<style${renderAttributes(node.openingElement.attributes, tagName)}>${escapeStyle(css)}</style>`;
+  }
 
   // Skip <Link> — render children in a <div>
   if (tagName === 'Link') {
@@ -752,7 +696,7 @@ function renderAttributes(attrs: any[], tagName: string): string {
     let name: string = attr.name?.name || '';
 
     // Skip event handlers and React-specific props
-    if (name.startsWith('on') && name[2] === name[2]?.toUpperCase()) continue;
+    if (/^on/i.test(name)) continue;
     if (['key', 'ref', 'dangerouslySetInnerHTML'].includes(name)) continue;
 
     // Map React attributes
@@ -769,20 +713,20 @@ function renderAttributes(attrs: any[], tagName: string): string {
     if (attr.value.type === 'StringLiteral') {
       // Skip `to` attribute from Link (already handled)
       if (name === 'to') continue;
-      parts.push(`${name}="${attr.value.value}"`);
+      parts.push(`${name}="${escapeAttribute(attr.value.value)}"`);
     } else if (attr.value.type === 'JSXExpressionContainer') {
       const expr = attr.value.expression;
       if (name === 'style' && expr.type === 'ObjectExpression') {
         // Convert style={{...}} to style="..."
         const styleStr = renderStyleObject(expr);
-        if (styleStr) parts.push(`style="${styleStr}"`);
+        if (styleStr) parts.push(`style="${escapeAttribute(styleStr)}"`);
       } else if (expr.type === 'StringLiteral') {
-        parts.push(`${name}="${expr.value}"`);
+        parts.push(`${name}="${escapeAttribute(expr.value)}"`);
       } else if (expr.type === 'NumericLiteral') {
         parts.push(`${name}="${expr.value}"`);
       } else if (expr.type === 'TemplateLiteral') {
-        const val = expr.quasis.map((q: any) => q.value.raw).join('');
-        parts.push(`${name}="${val}"`);
+        const val = expr.quasis.map((q: any) => q.value.cooked ?? q.value.raw).join('');
+        parts.push(`${name}="${escapeAttribute(val)}"`);
       } else {
         console.warn(`  WARN: Unhandled JSX expression of type "${expr.type}" inside attribute "${name}".`);
       }
@@ -871,7 +815,7 @@ function extractImportUrl(importLine: string): string | null {
 // ---------------------------------------------------------------------------
 // Build head template
 // ---------------------------------------------------------------------------
-function buildHead(opts: Opts): string {
+export function buildHead(opts: Opts): string {
   let useTailwind = !opts.noTailwind;
   let tailwindConfig = opts.tailwindConfig;
 
@@ -898,7 +842,7 @@ function buildHead(opts: Opts): string {
   const htmlExtra = extractFromHtml(opts.extraCss);
 
   // Build head
-  const htmlAttrs = opts.htmlClass ? ` lang="en" class="${opts.htmlClass}"` : ' lang="en"';
+  const htmlAttrs = opts.htmlClass ? ` lang="en" class="${escapeAttribute(opts.htmlClass)}"` : ' lang="en"';
   let head = `<!DOCTYPE html>\n<html${htmlAttrs}><head>\n<meta charset="utf-8"/>\n<meta content="width=device-width, initial-scale=1.0" name="viewport"/>\n`;
 
   if (useTailwind) {
@@ -908,12 +852,12 @@ function buildHead(opts: Opts): string {
   // @import → <link> (using robust parser)
   for (const imp of indexCss.imports) {
     const href = extractImportUrl(imp);
-    if (href) head += `<link href="${href}" rel="stylesheet"/>\n`;
+    if (href) head += `<link href="${escapeAttribute(href)}" rel="stylesheet"/>\n`;
   }
 
   // Extra font links from index.html
   for (const href of htmlExtra.links) {
-    head += `<link href="${href}" rel="stylesheet"/>\n`;
+    head += `<link href="${escapeAttribute(href)}" rel="stylesheet"/>\n`;
   }
 
   // Tailwind config
@@ -931,7 +875,7 @@ function buildHead(opts: Opts): string {
   if (hasApply && useTailwind) {
     console.log('Detected @apply — using <style type="text/tailwindcss">');
   }
-  head += `<style${styleType}>\n${allCss}</style>\n</head>\n`;
+  head += `<style${styleType}>\n${escapeStyle(allCss)}</style>\n</head>\n`;
 
   return head;
 }
@@ -982,10 +926,10 @@ async function main(): Promise<void> {
     const outerMatch = body.match(/^<div\s+class="([^"]*)"[^>]*>([\s\S]*)<\/div>$/);
     let fullHtml: string;
     if (outerMatch) {
-      fullHtml = head.replace('{{title}}', title) +
+      fullHtml = head.replace('</head>', () => `<title>${escapeHtml(title)}</title></head>`) +
         `<body class="${outerMatch[1]}">\n${outerMatch[2].trim()}\n</body></html>\n`;
     } else {
-      fullHtml = head.replace('{{title}}', title) +
+      fullHtml = head.replace('</head>', () => `<title>${escapeHtml(title)}</title></head>`) +
         `<body>\n${body}\n</body></html>\n`;
     }
 
@@ -1019,8 +963,7 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err: Error) => {
-  console.error('❌ Error:', err.message);
-  if (err.stack) console.error(err.stack);
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main().catch((err: Error) => {
+  console.error('❌ Error:', err instanceof ProjectDependencyError ? err.message : safeError(err));
   process.exit(1);
 });

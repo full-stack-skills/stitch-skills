@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env tsx
 /**
  * snapshot.ts — Production-grade Puppeteer-based full-page HTML snapshot
  *
@@ -8,9 +8,9 @@
  * plain HTML, etc.) — no MockPage.jsx needed.
  *
  * Usage:
- *   npx tsx snapshot.ts --url http://localhost:5173 --output .stitch/home.html
- *   npx tsx snapshot.ts --url http://localhost:3000/pricing --output .stitch/pricing.html --html-class dark
- *   npx tsx snapshot.ts --url http://localhost:5173 --output .stitch/page.html --wait 5000 --viewport 1440x900
+ *   node <SKILL_DIR>/scripts/run.mjs snapshot --url http://localhost:5173 --output .stitch/home.html
+ *   node <SKILL_DIR>/scripts/run.mjs snapshot --url http://localhost:3000/pricing --output .stitch/pricing.html --html-class dark
+ *   node <SKILL_DIR>/scripts/run.mjs snapshot --url http://localhost:5173 --output .stitch/page.html --wait 5000 --viewport 1440x900
  *
  * Flags:
  *   --url           URL to capture (required)
@@ -26,10 +26,13 @@
  *   --json          Output machine-readable JSON stats to stdout
  */
 
-import puppeteer, { type Browser } from 'puppeteer';
+import type { Browser } from 'puppeteer';
 import path from 'node:path';
 import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { materializeCssomStyles } from './snapshot_cssom.js';
+import { safeUrl, safeError } from './safe_diagnostics.js';
+import { requireProjectDependency, ProjectDependencyError } from './project_dependencies.mjs';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -145,7 +148,7 @@ function parseArgs(): Opts {
         break;
       case '--help':
         console.log(`
-Usage: npx tsx snapshot.ts --url <URL> --output <FILE> [options]
+Usage: node <SKILL_DIR>/scripts/run.mjs snapshot --url <URL> --output <FILE> [options]
 
 Options:
   --url           URL to capture (required)
@@ -186,7 +189,7 @@ function validateOpts(opts: Opts): void {
       new URL(opts.url);
     } catch {
       errors.push(
-        `Invalid URL: "${opts.url}". Must be a valid URL (e.g., http://localhost:5173)`,
+        'Invalid URL. Must be a valid URL (e.g., http://localhost:5173)',
       );
     }
   }
@@ -227,7 +230,7 @@ function validateOpts(opts: Opts): void {
       fs.mkdirSync(outputDir, { recursive: true });
       fs.accessSync(outputDir, fs.constants.W_OK);
     } catch (e: unknown) {
-      errors.push(`Cannot write to output directory: ${(e as Error).message}`);
+      errors.push(`Cannot write to output directory: ${safeError(e)}`);
     }
   }
 
@@ -241,7 +244,8 @@ function validateOpts(opts: Opts): void {
 // ---------------------------------------------------------------------------
 // Main snapshot logic
 // ---------------------------------------------------------------------------
-async function snapshot(opts: Opts): Promise<void> {
+export async function snapshot(opts: Opts): Promise<void> {
+  const puppeteer = (requireProjectDependency('puppeteer') as typeof import('puppeteer')).default;
   const [, widthStr, heightStr] = opts.viewport.match(/^(\d+)x(\d+)$/)!;
   const width = Number(widthStr);
   const height = Number(heightStr);
@@ -251,7 +255,7 @@ async function snapshot(opts: Opts): Promise<void> {
 
   // Stats tracking
   const stats: Stats = {
-    url: opts.url,
+    url: safeUrl(opts.url),
     output: null,
     sizeBytes: 0,
     stylesheets: 0,
@@ -296,16 +300,16 @@ async function snapshot(opts: Opts): Promise<void> {
     const page = await browser.newPage();
     await page.setViewport({ width, height });
 
-    // Forward browser console logs to Node.js
+    // Page console text may contain credentials or arbitrary application data.
     page.on('console', (msg) => {
       const type = msg.type().toString();
       if (type === 'warning' || type === 'error') {
-        console.log(`   [Browser ${type.toUpperCase()}] ${msg.text()}`);
+        console.log(`   [Browser ${type.toUpperCase()}] message omitted`);
       }
     });
 
     // ----- Navigate and wait for network idle -----
-    console.log(`📄 Navigating to ${opts.url}...`);
+    console.log(`📄 Navigating to ${safeUrl(opts.url)}...`);
     try {
       await page.goto(opts.url!, {
         waitUntil: 'networkidle0',
@@ -359,8 +363,8 @@ async function snapshot(opts: Opts): Promise<void> {
           console.warn(`⚠️  --auth-script (${opts.authScript}) did not export a function`);
         }
       } catch (err: any) {
-        console.warn(`⚠️  Failed to execute --auth-script: ${err.message}`);
-        stats.warnings.push(`auth-script error: ${err.message}`);
+        console.warn(`⚠️  Failed to execute --auth-script: ${safeError(err)}`);
+        stats.warnings.push(`auth-script error: ${safeError(err)}`);
       }
     }
 
@@ -375,7 +379,7 @@ async function snapshot(opts: Opts): Promise<void> {
             const childElement = await frame.$(opts.click);
             if (childElement) {
               element = childElement;
-              console.log(`   Found element inside child frame: ${frame.url()}`);
+              console.log(`   Found element inside child frame: ${safeUrl(frame.url())}`);
               break;
             }
           }
@@ -390,8 +394,8 @@ async function snapshot(opts: Opts): Promise<void> {
           throw new Error(`Selector "${opts.click}" not found in main document or child frames.`);
         }
       } catch (clickErr: any) {
-        console.error(`⚠️ Click action failed:`, clickErr);
-        stats.warnings.push(`Click action failed: ${clickErr.message || clickErr}`);
+        console.error(`⚠️ Click action failed: ${safeError(clickErr)}`);
+        stats.warnings.push(`Click action failed: ${safeError(clickErr)}`);
       }
     }
 
@@ -741,7 +745,7 @@ async function snapshot(opts: Opts): Promise<void> {
         try {
           const frameUrl = frame.url();
           const cleanUrl = frameUrl.split('?')[0].split('#')[0];
-          console.log(`📦 Extracting frame content from: ${cleanUrl} (depth: ${frame.parentFrame() ? 'nested' : 'root'})`);
+          console.log(`📦 Extracting frame content from: ${safeUrl(cleanUrl)} (depth: ${frame.parentFrame() ? 'nested' : 'root'})`);
 
           // Inject __name mock to prevent esbuild helper ReferenceError in child frame
           await frame.evaluate(() => {
@@ -865,7 +869,7 @@ async function snapshot(opts: Opts): Promise<void> {
           }
 
         } catch (frameErr) {
-          console.warn('Failed to extract child frame content:', frameErr);
+          console.warn('Failed to extract child frame content:', safeError(frameErr));
         }
       }
     }
@@ -1404,6 +1408,11 @@ async function snapshot(opts: Opts): Promise<void> {
       console.log('\n--- JSON Stats ---');
       console.log(JSON.stringify(stats, null, 2));
     }
+  } catch (error) {
+    stats.durationMs = Date.now() - startTime;
+    stats.error = safeError(error);
+    if (opts.json) console.log(JSON.stringify(stats, null, 2));
+    throw new Error(stats.error);
   } finally {
     // Guaranteed browser cleanup — prevents zombie Chrome processes
     if (globalTimer) clearTimeout(globalTimer);
@@ -1420,11 +1429,14 @@ async function snapshot(opts: Opts): Promise<void> {
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
-const opts = parseArgs();
-validateOpts(opts);
-
-snapshot(opts).catch((err: Error) => {
-  console.error('❌ Snapshot failed:', err.message);
-  if (err.stack) console.error(err.stack);
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  const opts = parseArgs();
+  Promise.resolve().then(() => {
+    requireProjectDependency('puppeteer');
+    validateOpts(opts);
+    return snapshot(opts);
+  }).catch((err: Error) => {
+    console.error('❌ Snapshot failed:', err instanceof ProjectDependencyError ? err.message : safeError(err));
+    process.exit(1);
+  });
+}

@@ -26,13 +26,15 @@ export default function Page() {
     const args = [process.env.STITCH_TSX_CLI];
     if (process.env.STITCH_TSX_TSCONFIG) args.push('--tsconfig', process.env.STITCH_TSX_TSCONFIG);
     args.push(fileURLToPath(new URL('../scripts/extract_inline_html.ts', import.meta.url)),
-      '--no-tailwind', '--outdir', outputDirectory, '--page', `${input}:orders.html:预约列表`);
-    const result = spawnSync(process.execPath, args, { encoding: 'utf8', timeout: 30000 });
+      '--no-tailwind', '--outdir', outputDirectory, '--page', `${input}:orders.html:$&</title><img src=x>`);
+    const project = path.resolve(path.dirname(process.env.STITCH_TSX_CLI), '../../..');
+    const result = spawnSync(process.execPath, args, { cwd: project, encoding: 'utf8', timeout: 30000 });
     assert.equal(result.status, 0, result.stdout + result.stderr);
     const html = fs.readFileSync(path.join(outputDirectory, 'orders.html'), 'utf8');
     assert.ok(html.includes('<main><h1>预约列表</h1><p>暂无预约</p></main>'));
     assert.ok(!html.includes('cdn.tailwindcss.com'));
     assert.ok(!result.stderr.includes('Babel parse error'));
+    assert.ok(html.includes('<title>$&amp;&lt;/title&gt;&lt;img src=x&gt;</title>'));
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }

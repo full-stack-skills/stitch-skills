@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env tsx
 /**
  * post_process.ts — Inline local images as base64 in extracted HTML files.
  *
@@ -7,9 +7,9 @@
  * character-by-character CSS url() parser instead of regex.
  *
  * Usage:
- *   npx tsx post_process.ts .stitch/home.html --base-dir my-app
- *   npx tsx post_process.ts .stitch/page1.html .stitch/page2.html --base-dir .
- *   npx tsx post_process.ts .stitch/*.html --base-dir . --json
+ *   node <SKILL_DIR>/scripts/run.mjs post-process .stitch/home.html --base-dir my-app
+ *   node <SKILL_DIR>/scripts/run.mjs post-process .stitch/page1.html .stitch/page2.html --base-dir .
+ *   node <SKILL_DIR>/scripts/run.mjs post-process .stitch/*.html --base-dir . --json
  *
  * Flags:
  *   --base-dir   Base directory for resolving relative paths
@@ -115,7 +115,7 @@ function parseArgs(): Opts {
         break;
       case '--help':
         console.log(`
-Usage: npx tsx post_process.ts <html_file> [...] [options]
+Usage: node <SKILL_DIR>/scripts/run.mjs post-process <html_file> [...] [options]
 
 Options:
   --base-dir   Base directory for resolving relative paths

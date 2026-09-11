@@ -6,7 +6,7 @@
 
 文件与安装交付完成。`stitch@personal` 已安装并启用；正常配置下，新的非交互 `codex exec --ephemeral` 进程可发现 Stitch Skill 与 `mcp__stitch__list_projects`。当前调用进程未设置 `STITCH_API_KEY`，因此按验收台账将真实 `list_projects` 标记为 `BLOCKED_ONLY_BY_MISSING_USER_ENV`，不将在线连接或 MCP 来源表述为已通过验证。
 
-## 验收证据
+## 初次安装验收证据（Task 8 历史记录）
 
 | 门禁 | 结果 |
 | --- | --- |
@@ -34,6 +34,14 @@
 补充执行 `env -u STITCH_API_KEY codex exec --ignore-user-config --ephemeral ...`：进程报告 `plugin_loaded=false`、`tool_discovered=false`、`call_succeeded=false`、`error_category=tool_unavailable`，没有执行 Stitch 调用。该模式排除了用户配置，但也禁用了个人插件，所以不能用于证明插件 MCP 来源或环境变量负路径。
 
 后续需要同时满足两类证据：一是在明确受控的 Codex 启动环境中配置 `STITCH_API_KEY` 后，从全新任务或进程验证只读调用；二是使用能够保留 `stitch@personal`、同时隔离其他 MCP/凭据来源的受支持方式验证缺失变量提示。当前 CLI 观察不到满足第二项的隔离模式，因此本次不猜测替代配置。
+
+## 最终审查修复（本轮离线证据）
+
+最终修复说明沿用已批准设计与计划。四项 finding 已修复：远程静态资源在每次连接/重定向前校验字面 IP 与全部 DNS 答案，并绑定到已验证地址；文本和 JSON 诊断去掉 URL 用户信息、查询与片段，停止转发任意浏览器日志/异常；JSX 文本、属性和 CSS raw-text 上下文分别转义；依赖预检和实际执行统一在获准应用 cwd，通过 `scripts/run.mjs` 解析已安装的 tsx/Puppeteer/Babel，缺失时明确停止且不安装。
+
+四项 finding 均记录了 RED 后 GREEN。附加兼容性验证覆盖签名图片 URL、带引号的 inline CSS 与标题中的替换元字符。修复测试只伪造 DNS/网络传输和浏览器 API 边界，未访问公网、未启动浏览器、未调用 Stitch。真实隔离依赖参与 TypeScript 检查，未添加 `any` 模块桩、忽略检查或安装依赖。39 个 Skill 入口和三份许可文件保持不变，39 quick validators、库存与 412 条相对 Markdown 引用通过。
+
+个人插件需使用本轮提交快照同步、验证并按 plugin-creator 的 cachebuster/reinstall 流程刷新；完整提交、版本和最终验证记录保存在本地 SDD `final-fix-report.md`。以上源码和离线测试证据不改变在线验收边界：`plugin_mcp_provenance=UNVERIFIED`、`missing_env_error_path=NOT_OBSERVED`、`list_projects=BLOCKED_ONLY_BY_MISSING_USER_ENV`。
 
 ## 完成门禁
 
