@@ -1,244 +1,77 @@
 ---
 name: stitch-extract-static-html
-description: >-
-  Extract self-contained static HTML from a built web application or React components by inlining CSS and images. Use this skill whenever you need to capture a specific UI state, share a static version of a page, or prepare assets for Stitch upload, even if the user just asks to 'save the HTML' or 'mock the view'.
-allowed-tools:
-  - "stitch*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+description: 从本地前端页面提取静态 HTML 并内联可获取资产；在需要保存指定 UI 状态、离线检查或为 Stitch 准备上传文件时触发。结果不包含交互逻辑，也不自动上传。
+license: Apache-2.0
 ---
 
-# Extract Static HTML
+# 提取静态 HTML 快照
 
-Extract a self-contained static HTML file from any web application.
+## 快速开始
 
-## Which Strategy to Use
+1. “保存门店预约 Web 页的空列表状态；先给本地可审阅结果。”
+2. “导出带 ECharts 的运营看板静态快照；保留已有范围与来源。”
+3. “应用无法运行时用显式演示数据构造静态 fallback；标出缺少的输入和验证状态。”
 
-You MUST ask the user to choose which strategy to use before proceeding. Present the options clearly, **recommend Strategy A** as the preferred default, and **provide a brief pros/cons summary** for each option to help them make an informed decision.
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-| | Strategy A (Puppeteer) | Strategy B (Browser Subagent) |
-| :--- | :--- | :--- |
-| **When** | App runs locally, no auth wall | Need to interact with page first (click, fill forms) |
-| **Fidelity** | **Highest — computed styles resolved** | High — rendered DOM |
-| **Setup** | **Zero — no mock needed** | Zero — no mock needed |
-| **Framework** | **Any** | Any |
-| **Output** | **Writes to file — no size limit** | May truncate in agent context |
+## 能力边界说明
 
-> [!WARNING]
-> **Checkpoint — User Confirmation Required.**
-> You **MUST** ask the user which strategy they prefer before proceeding.
-> Present the comparison table above, recommend Strategy A as the default, and
-> wait for explicit approval. Do **NOT** make the decision yourself or proceed
-> until the user confirms.
+### ✅ 擅长处理
 
-***
+- 保存门店预约 Web 页的空列表状态。
+- 导出带 ECharts 的运营看板静态快照。
+- 应用无法运行时用显式演示数据构造静态 fallback。
 
-## Strategy A: Puppeteer Snapshot (Recommended)
+### ⚠️ 需要素材
 
-Launches headless Chrome, captures the fully rendered DOM, and produces a self-contained HTML file with all CSS inlined and images as base64. Works with **any framework** — no MockPage.jsx needed.
+- 获准访问的本地 URL 或静态入口。
+- 视口、目标状态及输出文件路径。
+- 现有 Node/Puppeteer/tsx 工具；登录页需合法演示会话。
 
-### Prerequisites
+### ❌ 不适用场景及交接
 
-- App running locally (e.g., `npm run dev`)
-- Node.js with `puppeteer` available (check: `node -e "require('puppeteer')"`)
+- 自动上传到 Stitch → stitch-upload-to-stitch，提供审核后的文件。
+- 保留完整后端和交互功能 → 目标项目构建/部署流程。
+- 绕过登录或访问别人的会话 → 请使用拥有权限的测试账号和脱敏页面。
 
-### Workflow
+## 工作流程
 
-1.  **Start the App** and note the port.
+1. 检查已安装依赖与目标 URL，按可运行页面选择 Puppeteer；有已授权浏览器状态则用浏览器捕获，不重复询问已确定策略。
+2. 固定路由、视口和主题；认证脚本只使用获准测试身份，从环境读取凭据，不写到源码或日志。
+3. 运行 scripts/snapshot.ts；按需使用 --inline-canvas、--html-class、--viewport；依赖缺失时先输出准确命令与待补工具，不静默安装。
+4. 只有静态 fallback 才使用 extract_inline_html.ts 和 post_process.ts；将其标为模拟状态，不冒充运行页面。
+5. 检查输出中的残留外链、srcset、CSSOM、字体和图表；用离线打开验证，停止本次启动的服务。
 
-    > [!WARNING]
-    > **Checkpoint — User Confirmation Required.**
-    > After starting the local server, you **MUST** pause and ask the user for
-    > confirmation before running the snapshot script or launching a browser
-    > subagent. Report the URL and port to the user so they can verify the app
-    > is running and rendering correctly. Do **NOT** proceed to the snapshot
-    > step until the user confirms.
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-2.  **Run the Snapshot Script**:
-    ```bash
-    npx tsx <SKILL_DIR>/scripts/snapshot.ts \
-      --url http://localhost:5173 \
-      --output .stitch/home.html \
-      --wait 2000
-    ```
+## 安全与结果验证
 
-3.  **Multiple pages** — run once per route:
-    ```bash
-    npx tsx <SKILL_DIR>/scripts/snapshot.ts \
-      --url http://localhost:5173 --output .stitch/home.html --wait 2000
-    npx tsx <SKILL_DIR>/scripts/snapshot.ts \
-      --url http://localhost:5173/pricing --output .stitch/pricing.html --wait 2000
-    npx tsx <SKILL_DIR>/scripts/snapshot.ts \
-      --url http://localhost:5173/dashboard --output .stitch/dashboard.html --wait 2000 --html-class dark
-    ```
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-4.  **Clean Up Dev Server**:
-    If a local dev server was started specifically for snapshot extraction, make sure to stop the server process or terminate the background task once extraction is completed.
+- 本地资产不越过 --base-dir 或跟随越界符号链接。
+- CSSOM 快照保留媒体规则且不重写已有 style。
+- 静态输出缺失资源明确列出，未声称保留事件和接口。
 
+可定制：URL、viewport、html-class、wait、inline-canvas、输出路径。增值检查：CSSOM 保留；canvas 静态转换；同源资产与越界检查。
 
-### Script Flags
+## FAQ
 
-| Flag | Default | Description |
-| :--- | :--- | :--- |
-| `--url` | *(required)* | URL to capture |
-| `--output` | *(required)* | Output file path |
-| `--wait` | `1000` | Extra wait (ms) after network idle. Increase for lazy-loading apps. |
-| `--viewport` | `1280x800` | Viewport size as `WIDTHxHEIGHT` |
-| `--html-class` | — | Class(es) for `<html>` element (e.g., `dark`) |
-| `--remove-fixed` | `false` | Remove fixed/sticky elements (cookie banners, chat widgets) |
-| `--full-height` | `false` | Resize viewport to full scroll height |
-| `--title` | — | Override page title (set to the route path, e.g. `/dashboard` or `/settings/profile`) |
-| `--auth-script` | — | Path to a JS/TS module that exports a default `async (page) => void` function for authentication |
-| `--inline-canvas` | `false` | Convert `<canvas>` elements (ECharts, Chart.js, D3) to base64 `<img>` tags |
+**Q1：交付的主要结果是什么？** 输入演示 HTML <main><h1>预约列表</h1><p>暂无预约</p></main>；静态输出保留这三个节点，不含业务事件；远程写入 0。
 
-### What It Does Automatically
+**Q2：什么时候应换用其他入口？** 自动上传到 Stitch → stitch-upload-to-stitch，提供审核后的文件；保留完整后端和交互功能 → 目标项目构建/部署流程；绕过登录或访问别人的会话 → 请使用拥有权限的测试账号和脱敏页面。
 
-- Captures all CSSOM rules from `document.styleSheets` (preserves dynamic Vite/Tailwind dev styles and CSS-in-JS)
-- Inlines all `<link rel="stylesheet">` → `<style>` blocks
-- Converts `<img>` `src` **and `srcset`** → base64 data URIs (skips external fonts)
-- Inlines same-origin and relative icon font files (`@font-face`) as base64 data URIs so ligatures never render as ASCII text
-- Inlines `<source srcset>` URLs as base64
-- Removes failed/dead `srcset` entries so the browser falls back to the inlined `src`
-- Removes `<script>` tags, Vite HMR dev style blocks (`createHotContext`, `import.meta.hot`), and dev overlays
-- Resolves relative CSS `url()` paths before inlining
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：获准访问的本地 URL 或静态入口；视口、目标状态及输出文件路径；现有 Node/Puppeteer/tsx 工具；登录页需合法演示会话”。依赖这些输入的写操作不执行。
 
-### Framework Notes
+**Q4：怎样判断完成？** 本地资产不越过 --base-dir 或跟随越界符号链接；CSSOM 快照保留媒体规则且不重写已有 style；静态输出缺失资源明确列出，未声称保留事件和接口。
 
-| Framework | Notes |
-| :--- | :--- |
-| **React + Vite** | Works out of the box. `--wait 1000`. |
-| **Next.js** | `--wait 3000` for SSR hydration. URL: `http://localhost:3000`. `<img srcset>` from `/_next/image` is auto-inlined as base64. |
-| **Angular (@angular/cli / v17+)** | Works out of the box with `ng serve` (default URL: `http://localhost:4200`). `--wait 2000` for Angular Material / PrimeNG animation hydration and lazy-loaded routes. |
-| **Vue / Nuxt** | Works out of the box. |
-| **Svelte / SvelteKit** | Works out of the box. |
-| **Storybook** | Use story URL: `--url http://localhost:6006/?path=/story/...` |
-| **SSR (Webpack)** | May need longer `--wait`. |
+**Q5：怎样定制？** URL、viewport、html-class、wait、inline-canvas、输出路径；未提供时沿用现有项目值并标明假设。
 
-### Troubleshooting
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-| Issue | Solution |
-| :--- | :--- |
-| Images missing | Increase `--wait` |
-| Images show as broken after server stops | Verify `srcset` was inlined — check log for "Inlined N images". If `srcset` URLs failed, they are auto-removed so `src` (inlined) is used. |
-| Icons display as text / Serif unstyled font | Ensure `snapshot.ts` captures CSSOM from `document.styleSheets` (step 0) and same-origin icon fonts (`@font-face`) are inlined as base64 data URIs. |
-| Next.js `/_next/image` not inlined | Ensure the dev server is running when snapshot runs — the script fetches optimized images from the running server. |
-| Dark mode not applied | `--html-class dark` |
-| Cookie banner in output | `--remove-fixed` |
-| Page requires login | Use `--auth-script ./auth.ts` (see Auth-Gated Pages below) |
-| Charts/graphs show as blank boxes | Use `--inline-canvas` to serialize `<canvas>` to base64 `<img>` |
-| `Cannot find module 'puppeteer'` | `npm install -g puppeteer` |
+## 按需参考
 
-### Auth-Gated Pages
-
-For apps with login guards (Vue Router `beforeEach`, React `ProtectedRoute`, etc.), create a small auth script that runs in the Puppeteer session:
-
-```ts
-// auth-myapp.ts
-import type { Page } from 'puppeteer';
-
-export default async function authenticate(page: Page) {
-  // Example 1: Fill and submit a login form
-  await page.type('#username', 'admin');
-  await page.type('#password', 'password123');
-  await page.click('#login-button');
-  await page.waitForNavigation({ waitUntil: 'networkidle2' });
-
-  // Example 2: Inject cookies/localStorage directly
-  // await page.evaluate(() => {
-  //   localStorage.setItem('token', 'mock-jwt-token');
-  // });
-
-  // Example 3: Call the app's own login API via module injection (Vue/Vite)
-  // await page.evaluate(() => {
-  //   return new Promise((resolve) => {
-  //     const script = document.createElement('script');
-  //     script.type = 'module';
-  //     script.textContent = `
-  //       import { useUserStore } from '/src/store/modules/user.ts';
-  //       import { fetchLogin } from '/src/api/auth.ts';
-  //       const res = await fetchLogin({ userName: 'Admin', password: '123456' });
-  //       useUserStore().setToken(res.token, res.refreshToken);
-  //       window.dispatchEvent(new CustomEvent('auth-done'));
-  //     `;
-  //     document.head.appendChild(script);
-  //     window.addEventListener('auth-done', () => resolve(true), { once: true });
-  //   });
-  // });
-}
-```
-
-Then use it:
-```bash
-npx tsx <SKILL_DIR>/scripts/snapshot.ts \
-  --url http://localhost:5173/#/dashboard \
-  --output .stitch/dashboard.html \
-  --auth-script ./auth-myapp.ts \
-  --inline-canvas \
-  --wait 5000
-```
-
-The script navigates to the `--url` first (which may redirect to login), runs your auth function, then **re-navigates** to the original `--url` with the authenticated session.
-
-***
-
-## Strategy B: Browser Subagent Capture
-
-Use when you need to **interact with the page** (click buttons, fill forms, navigate tabs) before capturing. The browser subagent gives you full control but output may truncate for large pages.
-
-### Workflow
-
-1.  **Start the App** locally.
-2.  **Navigate** using a browser subagent.
-3.  **Interact** as needed (click, scroll, fill forms).
-4.  **Extract DOM**: `document.documentElement.outerHTML`
-
-    > [!WARNING]
-    > Large pages may truncate. To handle this:
-    > - Remove `<style>` tags before extraction: `document.querySelectorAll('style').forEach(el => el.remove())`
-    > - Re-add styles statically (Tailwind CDN link, source CSS)
-5.  **Save** to file.
-
-***
-
-## Appendix: Static Fallback (MockPage.jsx)
-
-> [!NOTE]
-> This method is a **last resort** for when the app cannot run locally (broken deps, missing backend, auth walls with no bypass). It requires manually flattening React components into a single JSX file. **Prefer Strategy A whenever possible.**
-
-### When to Use
-
-- App can't run locally at all
-- Page requires auth with no mock/bypass
-- You need a specific UI state that's impossible to reach by navigation (error screens, empty states)
-
-### Quick Reference
-
-```bash
-npx tsx <SKILL_DIR>/scripts/extract_inline_html.ts \
-  --index-css src/css/App.css \
-  --extra-css index.html \
-  --outdir .stitch \
-  --page src/MockPage.jsx:Page.html:"Page Title"
-```
-
-**Key flags**: `--no-tailwind` (non-Tailwind apps), `--html-class dark` (dark mode), `--css-files` (extra CSS files).
-
-**Auto-detection**: Tailwind config is auto-detected. `@apply` directives automatically use `<style type="text/tailwindcss">`.
-
-### MockPage.jsx Rules
-
-1. **Include the full layout** — header, sidebar, footer (read `App.js` first)
-2. **Flatten all conditionals** — pick one state, remove all ternaries and `&&` guards
-3. **Hardcode all data** — replace `{variable}` with concrete values, unroll `.map()` loops
-4. **Preserve logos** — use `<img>` with local paths (post-process will inline them)
-5. **Remove floating elements** — cookie banners, chat widgets, feedback buttons
-
-### Post-Processing
-
-Inline local images:
-```bash
-npx tsx <SKILL_DIR>/scripts/post_process.ts \
-  .stitch/Page.html --base-dir <app-directory>
-```
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

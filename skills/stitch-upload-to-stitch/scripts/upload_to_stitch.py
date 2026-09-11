@@ -25,17 +25,21 @@ Usage:
         [--api-url <STITCH_API_BASE_URL>] \
         [--api-key <API_KEY>] \
         [--title <SCREEN_TITLE>] \
-        [--generated-by <GENERATED_BY>] \
-        [--create-screen-instances]
+        [--generated-by <GENERATED_BY>]
+
+Credentials default to STITCH_API_KEY. The CLI always creates screen instances.
 """
 
 import argparse
 import base64
 import json
+import os
 import pathlib
 import sys
 from typing import Any
 import urllib.request
+import urllib.parse
+import urllib.error
 
 try:
   import ssl
@@ -57,6 +61,20 @@ _MIME_TYPES = {
 }
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+  """Never forward upload credentials or repeat a POST after a redirect."""
+
+  def redirect_request(self, req, fp, code, msg, headers, newurl):
+    return None
+
+
+def secure_urlopen(req, *, timeout=120, context=None):
+  """Use verified TLS and disable redirects; no automatic write retries."""
+  return urllib.request.build_opener(
+      NoRedirect(), urllib.request.HTTPSHandler(context=context)
+  ).open(req, timeout=timeout)
+
+
 def encode_file(path: pathlib.Path) -> str:
   """Read and base64-encode a file."""
   with open(path, "rb") as f:
@@ -69,7 +87,7 @@ def call_batch_create_screens(
     project_id: str,
     requests: list[dict[str, Any]],
     create_screen_instances: bool = False,
-    urlopen: Any = urllib.request.urlopen,
+    urlopen: Any = secure_urlopen,
 ) -> dict[str, Any]:
   """Call BatchCreateScreens REST API directly.
 
@@ -86,6 +104,12 @@ def call_batch_create_screens(
   Returns:
     Parsed JSON response dict.
   """
+  endpoint = urllib.parse.urlsplit(api_url)
+  if (endpoint.scheme != "https" or not endpoint.hostname or endpoint.username
+      or endpoint.password or endpoint.query or endpoint.fragment):
+    raise ValueError("上传地址必须为 HTTPS，且不得含凭据、查询参数或片段。")
+  if not project_id.isascii() or not project_id.isdigit():
+    raise ValueError("缺少有效项目 ID：请从 Stitch 元数据获取纯数字字符串。")
   url = f"{api_url.rstrip('/')}/v1/projects/{project_id}/screens:batchCreate"
 
   payload = {
@@ -106,24 +130,16 @@ def call_batch_create_screens(
   )
 
   try:
-    print("Calling urlopen...")
     urlopen_kwargs = {"timeout": 120}
     if _SSL_CONTEXT is not None:
       urlopen_kwargs["context"] = _SSL_CONTEXT
     with urlopen(req, **urlopen_kwargs) as resp:
-      print(f"urlopen returned. Status: {resp.getcode()}")
       body = resp.read().decode("utf-8")
-      print(f"Response status: {resp.getcode()}")
-      print(f"Response body (first 1000 chars): {body[:1000]}")
       if not body:
-        print("Error: Empty response body")
-        sys.exit(1)
+        raise ValueError("上传响应为空；先读取项目状态，勿重复提交。")
       return json.loads(body)
   except urllib.error.HTTPError as e:
-    error_body = e.read().decode("utf-8")
-    print(f"HTTP Error {e.code}: {e.reason}")
-    print(f"Response: {error_body}")
-    sys.exit(1)
+    raise ValueError(f"上传返回 HTTP {e.code}；请检查授权并读取项目状态，勿重复提交。") from None
 
 
 def build_screen_request(
@@ -199,8 +215,8 @@ def parse_args():
   )
   parser.add_argument(
       "--api-key",
-      required=True,
-      help="API key for the Stitch API.",
+      default=os.environ.get("STITCH_API_KEY"),
+      help="Legacy API key flag; prefer STITCH_API_KEY to avoid argv exposure.",
   )
   parser.add_argument(
       "--title",
@@ -215,7 +231,10 @@ def parse_args():
           " (HTML/markdown uploads only)."
       ),
   )
-  return parser.parse_args()
+  args = parser.parse_args()
+  if not args.api_key:
+    parser.error("缺少 STITCH_API_KEY：请在运行环境设置，勿粘贴密钥到会话。")
+  return args
 
 
 def main():
@@ -232,7 +251,7 @@ def main():
     )
     sys.exit(1)
 
-  if not file_path.exists():
+  if not file_path.is_file():
     print(f"Error: File not found: {file_path}")
     sys.exit(1)
 
@@ -250,7 +269,6 @@ def main():
   )
 
   print(f"\nUploading to project: {args.project_id}")
-  print(f"API URL:   {args.api_url}")
 
   result = call_batch_create_screens(
       api_url=args.api_url,
@@ -260,9 +278,16 @@ def main():
       create_screen_instances=True,
   )
 
-  print("\nResponse:")
-  print(json.dumps(result, indent=2))
+  # Report only the identifiers required by downstream design-system calls.
+  summary = {"screens": [{"name": s.get("name")} for s in result.get("screens", [])],
+             "screenInstances": [{"id": s.get("id"), "sourceScreen": s.get("sourceScreen")}
+                                 for s in result.get("screenInstances", [])]}
+  print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except (OSError, ValueError, urllib.error.URLError):
+    print("上传未确认完成：请检查输入文件、HTTPS/CA 与授权，再读取项目状态；不要直接重试。", file=sys.stderr)
+    sys.exit(1)

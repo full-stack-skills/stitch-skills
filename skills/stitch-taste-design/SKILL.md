@@ -1,191 +1,77 @@
 ---
 name: stitch-taste-design
-description: Semantic Design System Skill for Google Stitch. Generates agent-friendly DESIGN.md files that enforce premium, anti-generic UI standards — strict typography, calibrated color, asymmetric layouts, perpetual micro-motion, and hardware-accelerated performance.
-allowed-tools:
-  - "StitchMCP"
-  - "Read"
-  - "Write"
+description: 为 Stitch 编写有明确视觉取向的 DESIGN.md 提案；当用户要求更有特色的排版、色彩、布局和动效方案时触发。审计现有设计事实用 stitch-design-md；不会自动覆盖已批准品牌规范或生成远程屏幕。
+license: Apache-2.0
 ---
 
-# Stitch Design Taste — Semantic Design System Skill
+# Stitch 视觉风格提案
 
-## Overview
-This skill generates `DESIGN.md` files optimized for Google Stitch screen generation. It translates the battle-tested anti-slop frontend engineering directives into Stitch's native semantic design language — descriptive, natural-language rules paired with precise values that Stitch's AI agent can interpret to produce premium, non-generic interfaces.
+## 快速开始
 
-The generated `DESIGN.md` serves as the **single source of truth** for prompting Stitch to generate new screens that align with a curated, high-agency design language. Stitch interprets design through **"Visual Descriptions"** supported by specific color values, typography specs, and component behaviors.
+1. “为门店预约品牌写克制的中文视觉提案；先给本地可审阅结果。”
+2. “将运营看板的密度/动效偏好转为规范；保留已有范围与来源。”
+3. “在品牌既有颜色下提出排版和布局变体；标出缺少的输入和验证状态。”
 
-## Prerequisites
-- Access to Google Stitch via [labs.google.com/stitch](https://labs.google.com/stitch)
-- Optionally: Stitch MCP Server for programmatic integration with Cursor, Antigravity, or Gemini CLI
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-## The Goal
-Generate a `DESIGN.md` file that encodes:
-1. **Visual atmosphere** — the mood, density, and design philosophy
-2. **Color calibration** — neutrals, accents, and banned patterns with hex codes
-3. **Typographic architecture** — font stacks, scale hierarchy, and anti-patterns
-4. **Component behaviors** — buttons, cards, inputs with interaction states
-5. **Layout principles** — grid systems, spacing philosophy, responsive strategy
-6. **Motion philosophy** — animation engine specs, spring physics, perpetual micro-interactions
-7. **Anti-patterns** — explicit list of banned AI design clichés
+## 能力边界说明
 
-## Analysis & Synthesis Instructions
+### ✅ 擅长处理
 
-### 1. Define the Atmosphere
-Evaluate the target project's intent. Use evocative adjectives from the taste spectrum:
-- **Density:** "Art Gallery Airy" (1–3) → "Daily App Balanced" (4–7) → "Cockpit Dense" (8–10)
-- **Variance:** "Predictable Symmetric" (1–3) → "Offset Asymmetric" (4–7) → "Artsy Chaotic" (8–10)
-- **Motion:** "Static Restrained" (1–3) → "Fluid CSS" (4–7) → "Cinematic Choreography" (8–10)
+- 为门店预约品牌写克制的中文视觉提案。
+- 将运营看板的密度/动效偏好转为规范。
+- 在品牌既有颜色下提出排版和布局变体。
 
-Default baseline: Creativity 9, Variance 8, Motion 6, Density 5. Adapt dynamically based on user's vibe description.
+### ⚠️ 需要素材
 
-### 2. Map the Color Palette
-For each color provide: **Descriptive Name** + **Hex Code** + **Functional Role**.
+- 品牌素材与页面目的。
+- 目标受众、视口和已有约束。
+- 密度、变化程度、动效偏好。
 
-**Mandatory constraints:**
-- Maximum 1 accent color. Saturation below 80%
-- The "AI Purple/Blue Neon" aesthetic is strictly BANNED — no purple button glows, no neon gradients
-- Use absolute neutral bases (Zinc/Slate) with high-contrast singular accents
-- Stick to one palette for the entire output — no warm/cool gray fluctuation
-- Never use pure black (`#000000`) — use Off-Black, Zinc-950, or Charcoal
+### ❌ 不适用场景及交接
 
-### 3. Establish Typography Rules
-- **Display/Headlines:** Track-tight, controlled scale. Not screaming. Hierarchy through weight and color, not just massive size
-- **Body:** Relaxed leading, max 65 characters per line
-- **Font Selection:** `Inter` is BANNED for premium/creative contexts. Force unique character: `Geist`, `Outfit`, `Cabinet Grotesk`, or `Satoshi`
-- **Serif Ban:** Generic serif fonts (`Times New Roman`, `Georgia`, `Garamond`, `Palatino`) are BANNED. If serif is needed for editorial/creative contexts, use only distinctive modern serifs: `Fraunces`, `Gambarino`, `Editorial New`, or `Instrument Serif`. Serif is always BANNED in dashboards or software UIs
-- **Dashboard Constraint:** Use Sans-Serif pairings exclusively (`Geist` + `Geist Mono` or `Satoshi` + `JetBrains Mono`)
-- **High-Density Override:** When density exceeds 7, all numbers must use Monospace
+- 提取既有实现的真实 token → stitch-extract-design-md。
+- 生成实际 Stitch 屏幕 → stitch-ui-designer。
+- 擅自更换品牌或伪造产品成绩 → 保留品牌输入；缺数据时给结构示意而非事实宣称。
 
-### 4. Define the Hero Section
-The Hero is the first impression and must be creative, striking, and never generic:
-- **Inline Image Typography:** Embed small, contextual photos or visuals directly between words or letters in the headline. Images sit inline at type-height, rounded, acting as visual punctuation. This is the signature creative technique
-- **No Overlapping:** Text must never overlap images or other text. Every element occupies its own clean spatial zone
-- **No Filler Text:** "Scroll to explore", "Swipe down", scroll arrow icons, bouncing chevrons are BANNED. The content should pull users in naturally
-- **Asymmetric Structure:** Centered Hero layouts BANNED when variance exceeds 4
-- **CTA Restraint:** Maximum one primary CTA. No secondary "Learn more" links
+## 工作流程
 
-### 5. Describe Component Stylings
-For each component type, describe shape, color, shadow depth, and interaction behavior:
-- **Buttons:** Tactile push feedback on active state. No neon outer glows. No custom mouse cursors
-- **Cards:** Use ONLY when elevation communicates hierarchy. Tint shadows to background hue. For high-density layouts, replace cards with border-top dividers or negative space
-- **Inputs/Forms:** Label above input, helper text optional, error text below. Standard gap spacing
-- **Loading States:** Skeletal loaders matching layout dimensions — no generic circular spinners
-- **Empty States:** Composed compositions indicating how to populate data
-- **Error States:** Clear, inline error reporting
+1. 读取品牌与目标，优先用户已批准值，区分观察事实与设计建议。
+2. 给出密度/布局变化/动效三个可调方向，默认是建议，不是硬性品牌规则。
+3. 形成颜色名称/值/角色与含中文回退的字体层级，核对可读性和内容密度。
+4. 为组件、布局、断点及动效写具体约束，prefers-reduced-motion 时关闭非必要运动，不强制无限循环。
+5. 输出七节 DESIGN.md 提案并标出决策依据、待定项和验证方法；如需上传另走管理技能。
 
-### 6. Define Layout Principles
-- No overlapping elements — every element occupies its own clear spatial zone. No absolute-positioned content stacking
-- Centered Hero sections are BANNED when variance exceeds 4 — force Split Screen, Left-Aligned, or Asymmetric Whitespace
-- The generic "3 equal cards horizontally" feature row is BANNED — use 2-column Zig-Zag, asymmetric grid, or horizontal scroll
-- CSS Grid over Flexbox math — never use `calc()` percentage hacks
-- Contain layouts using max-width constraints (e.g., 1400px centered)
-- Full-height sections must use `min-h-[100dvh]` — never `h-screen` (iOS Safari catastrophic jump)
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-### 7. Define Responsive Rules
-Every design must work across all viewports:
-- **Mobile-First Collapse (< 768px):** All multi-column layouts collapse to single column. No exceptions
-- **No Horizontal Scroll:** Horizontal overflow on mobile is a critical failure
-- **Typography Scaling:** Headlines scale via `clamp()`. Body text minimum `1rem`/`14px`
-- **Touch Targets:** All interactive elements minimum `44px` tap target
-- **Image Behavior:** Inline typography images (photos between words) stack below headline on mobile
-- **Navigation:** Desktop horizontal nav collapses to clean mobile menu
-- **Spacing:** Vertical section gaps reduce proportionally (`clamp(3rem, 8vw, 6rem)`)
+## 安全与结果验证
 
-### 8. Encode Motion Philosophy
-- **Spring Physics default:** `stiffness: 100, damping: 20` — premium, weighty feel. No linear easing
-- **Perpetual Micro-Interactions:** Every active component should have an infinite loop state (Pulse, Typewriter, Float, Shimmer)
-- **Staggered Orchestration:** Never mount lists instantly — use cascade delays for waterfall reveals
-- **Performance:** Animate exclusively via `transform` and `opacity`. Never animate `top`, `left`, `width`, `height`. Grain/noise filters on fixed pseudo-elements only
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-### 9. List Anti-Patterns (AI Tells)
-Encode these as explicit "NEVER DO" rules in the DESIGN.md:
-- No emojis anywhere
-- No `Inter` font
-- No generic serif fonts (`Times New Roman`, `Georgia`, `Garamond`) — distinctive modern serifs only if needed
-- No pure black (`#000000`)
-- No neon/outer glow shadows
-- No oversaturated accents
-- No excessive gradient text on large headers
-- No custom mouse cursors
-- No overlapping elements — clean spatial separation always
-- No 3-column equal card layouts
-- No generic names ("John Doe", "Acme", "Nexus")
-- No fake round numbers (`99.99%`, `50%`)
-- No fabricated data or statistics — never generate metrics, performance numbers, uptime percentages, response times, or any data that the user did not explicitly provide. "99.98% UPTIME SLA", "124ms AVG. RESPONSE", "18.5k DEPLOY CYCLES" are invented AI filler. If real data is not available, use clear placeholder labels like `[metric]` instead of making up numbers
-- No fake system/metric sections — "SYSTEM PERFORMANCE METRICS", "KEY STATISTICS", "BY THE NUMBERS" dashboard cards filled with invented data are BANNED
-- No `LABEL // YEAR` formatting — "SYSTEM // 2024", "METRICS // 2025" is a lazy AI convention, not real design typography
-- No AI copywriting clichés ("Elevate", "Seamless", "Unleash", "Next-Gen")
-- No filler UI text: "Scroll to explore", "Swipe down", scroll arrows, bouncing chevrons
-- No broken Unsplash links — use `picsum.photos` or SVG avatars
-- No centered Hero sections (for high-variance projects)
+- 品牌优先于示例风格禁令。
+- 中文字体与低动效有明确路径。
+- 统计、客户数、性能数据未虚构。
 
-## Output Format (DESIGN.md Structure)
+可定制：密度、变化、动效强度、品牌锁定项、设备和中文字体。增值检查：可调风格轴；品牌差异说明；低动效方案。
 
-```markdown
-# Design System: [Project Title]
+## FAQ
 
-## 1. Visual Theme & Atmosphere
-(Evocative description of the mood, density, variance, and motion intensity.
-Example: "A restrained, gallery-airy interface with confident asymmetric layouts
-and fluid spring-physics motion. The atmosphere is clinical yet warm — like a
-well-lit architecture studio.")
+**Q1：交付的主要结果是什么？** 门店预约提案：保留品牌 #2563eb；密度 5/10；中文系统无衬线；按钮按压反馈；低动效模式关闭位移；全部为建议，未上传。
 
-## 2. Color Palette & Roles
-- **Canvas White** (#F9FAFB) — Primary background surface
-- **Pure Surface** (#FFFFFF) — Card and container fill
-- **Charcoal Ink** (#18181B) — Primary text, Zinc-950 depth
-- **Muted Steel** (#71717A) — Secondary text, descriptions, metadata
-- **Whisper Border** (rgba(226,232,240,0.5)) — Card borders, 1px structural lines
-- **[Accent Name]** (#XXXXXX) — Single accent for CTAs, active states, focus rings
-(Max 1 accent. Saturation < 80%. No purple/neon.)
+**Q2：什么时候应换用其他入口？** 提取既有实现的真实 token → stitch-extract-design-md；生成实际 Stitch 屏幕 → stitch-ui-designer；擅自更换品牌或伪造产品成绩 → 保留品牌输入；缺数据时给结构示意而非事实宣称。
 
-## 3. Typography Rules
-- **Display:** [Font Name] — Track-tight, controlled scale, weight-driven hierarchy
-- **Body:** [Font Name] — Relaxed leading, 65ch max-width, neutral secondary color
-- **Mono:** [Font Name] — For code, metadata, timestamps, high-density numbers
-- **Banned:** Inter, generic system fonts for premium contexts. Serif fonts banned in dashboards.
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：品牌素材与页面目的；目标受众、视口和已有约束；密度、变化程度、动效偏好”。依赖这些输入的写操作不执行。
 
-## 4. Component Stylings
-* **Buttons:** Flat, no outer glow. Tactile -1px translate on active. Accent fill for primary, ghost/outline for secondary.
-* **Cards:** Generously rounded corners (2.5rem). Diffused whisper shadow. Used only when elevation serves hierarchy. High-density: replace with border-top dividers.
-* **Inputs:** Label above, error below. Focus ring in accent color. No floating labels.
-* **Loaders:** Skeletal shimmer matching exact layout dimensions. No circular spinners.
-* **Empty States:** Composed, illustrated compositions — not just "No data" text.
+**Q4：怎样判断完成？** 品牌优先于示例风格禁令；中文字体与低动效有明确路径；统计、客户数、性能数据未虚构。
 
-## 5. Layout Principles
-(Grid-first responsive architecture. Asymmetric splits for Hero sections.
-Strict single-column collapse below 768px. Max-width containment.
-No flexbox percentage math. Generous internal padding.)
+**Q5：怎样定制？** 密度、变化、动效强度、品牌锁定项、设备和中文字体；未提供时沿用现有项目值并标明假设。
 
-## 6. Motion & Interaction
-(Spring physics for all interactive elements. Staggered cascade reveals.
-Perpetual micro-loops on active dashboard components. Hardware-accelerated
-transforms only. Isolated Client Components for CPU-heavy animations.)
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-## 7. Anti-Patterns (Banned)
-(Explicit list of forbidden patterns: no emojis, no Inter, no pure black,
-no neon glows, no 3-column equal grids, no AI copywriting clichés,
-no generic placeholder names, no broken image links.)
-```
+## 按需参考
 
-## Best Practices
-- **Be Descriptive:** "Deep Charcoal Ink (#18181B)" — not just "dark text"
-- **Be Functional:** Explain what each element is used for
-- **Be Consistent:** Same terminology throughout the document
-- **Be Precise:** Include exact hex codes, rem values, pixel values in parentheses
-- **Be Opinionated:** This is not a neutral template — it enforces a specific, premium aesthetic
-
-## Tips for Success
-1. Start with the atmosphere — understand the vibe before detailing tokens
-2. Look for patterns — identify consistent spacing, sizing, and styling
-3. Think semantically — name colors by purpose, not just appearance
-4. Consider hierarchy — document how visual weight communicates importance
-5. Encode the bans — anti-patterns are as important as the rules themselves
-
-## Common Pitfalls to Avoid
-- Using technical jargon without translation ("rounded-xl" instead of "generously rounded corners")
-- Omitting hex codes or using only descriptive names
-- Forgetting functional roles of design elements
-- Being too vague in atmosphere descriptions
-- Ignoring the anti-pattern list — these are what make the output premium
-- Defaulting to generic "safe" designs instead of enforcing the curated aesthetic
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

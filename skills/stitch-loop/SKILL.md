@@ -1,263 +1,77 @@
 ---
 name: stitch-loop
-description: Teaches agents to iteratively build websites using Stitch with an autonomous baton-passing loop pattern
-allowed-tools:
-  - "stitch*:*"
-  - "chrome*:*"
-  - "Read"
-  - "Write"
-  - "Bash"
+description: 根据 .stitch/SITE.md、DESIGN.md 和 next-prompt.md 接力完成已授权的 Stitch 页面构建；当用户要求按 backlog 继续迭代并交接下一页时触发。只写提示词、规划或无限后台运行不属于本入口。
+license: Apache-2.0
 ---
 
-# Stitch Build Loop
+# Stitch 有限页面构建循环
 
-You are an **autonomous frontend builder** participating in an iterative site-building loop. Your goal is to generate a page using Stitch, integrate it into the site, and prepare instructions for the next iteration.
+## 快速开始
 
-## Overview
+1. “接力完成门店预约站当前订单页；先给本地可审阅结果。”
+2. “按批准 backlog 顺序生成两页并交接；保留已有范围与来源。”
+3. “中断后只读核对远程状态和当前 baton；标出缺少的输入和验证状态。”
 
-The Build Loop pattern enables continuous, autonomous website development through a "baton" system. Each iteration:
-1. Reads the current task from a baton file (`.stitch/next-prompt.md`)
-2. Generates a page using Stitch MCP tools
-3. Integrates the page into the site structure
-4. Writes the next task to the baton file for the next iteration
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-## Prerequisites
+## 能力边界说明
 
-**Required:**
-- Access to the Stitch MCP Server
-- A Stitch project (existing or will be created)
-- A `.stitch/DESIGN.md` file (generate one using the `stitch-design-md` skill if needed)
-- A `.stitch/SITE.md` file documenting the site vision and roadmap
+### ✅ 擅长处理
 
-**Optional:**
-- Chrome DevTools MCP Server — enables visual verification of generated pages
+- 接力完成门店预约站当前订单页。
+- 按批准 backlog 顺序生成两页并交接。
+- 中断后只读核对远程状态和当前 baton。
 
-## The Baton System
+### ⚠️ 需要素材
 
-The `.stitch/next-prompt.md` file acts as a relay baton between iterations:
+- SITE.md、DESIGN.md 与当前 next-prompt.md。
+- 项目元数据、既有页面及授权轮次。
+- 可用 Stitch 工具和目标输出根目录。
 
-```markdown
----
-page: about
----
-A page describing how jules.top tracking works.
+### ❌ 不适用场景及交接
 
-**DESIGN SYSTEM (REQUIRED):**
-[Copy from .stitch/DESIGN.md Section 6]
+- 仅生成站点蓝图 → stitch-site-md。
+- 单次润色提示词 → stitch-ui-prompt-architect。
+- 后台无限监控或自动部署 → 使用产品调度/部署流程，交付当前 baton 和停止原因。
 
-**Page Structure:**
-1. Header with navigation
-2. Explanation of tracking methodology
-3. Footer with links
-```
+## 工作流程
 
-**Critical rules:**
-- The `page` field in YAML frontmatter determines the output filename
-- The prompt content must include the design system block from `.stitch/DESIGN.md`
-- You MUST update this file before completing your work to continue the loop
+1. 读取 baton 的 page、SITE.md 的 sitemap/backlog 和实际文件；page 只允许安全 slug，不含斜杠或 ..。
+2. 选一个已授权待办；核对项目与当前系统，已有页面不重建，空 backlog 或达到轮次立即停止并记录。
+3. 按项目已应用系统/内联 fallback 条件调用 prompt architect；生成一次，超时先三项只读对账。
+4. 在暂存目录下载并核对截图/HTML和导航，验证通过后才整合到实际站点根；保留旧版便于恢复。
+5. 更新 SITE.md 的证据状态及下一 baton；若已完成范围则写明确完成/停止说明，不自行增生任务。
 
-## Execution Protocol
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-### Step 1: Read the Baton
+## 安全与结果验证
 
-Parse `.stitch/next-prompt.md` to extract:
-- **Page name** from the `page` frontmatter field
-- **Prompt content** from the markdown body
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-### Step 2: Consult Context Files
+- page 不会逃逸站点根目录。
+- 本轮写入一次，未知结果先 get_project/list_screens/get_screen。
+- 未验证页面不标完成，停止状态不会自动续写。
 
-Before generating, read these files:
+可定制：最大轮次、站点根、页面列表、缓存复用策略和系统模式。增值检查：baton 路径约束；有限循环；跨轮证据交接。
 
-| File | Purpose |
-|------|---------|
-| `.stitch/SITE.md` | Site vision, **Stitch Project ID**, existing pages (sitemap), roadmap |
-| `.stitch/DESIGN.md` | Required visual style for Stitch prompts |
+## FAQ
 
-**Important checks:**
-- Section 4 (Sitemap) — Do NOT recreate pages that already exist
-- Section 5 (Roadmap) — Pick tasks from here if backlog exists
-- Section 6 (Creative Freedom) — Ideas for new pages if roadmap is empty
+**Q1：交付的主要结果是什么？** 输入 page: orders；sitemap 已有 orders.html 且已验收 → 本轮跳过重建，选择授权待办；无待办则停止，不生成新项目。
 
-### Step 3: Generate with Stitch
+**Q2：什么时候应换用其他入口？** 仅生成站点蓝图 → stitch-site-md；单次润色提示词 → stitch-ui-prompt-architect；后台无限监控或自动部署 → 使用产品调度/部署流程，交付当前 baton 和停止原因。
 
-Use the Stitch MCP tools to generate the page:
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：SITE.md、DESIGN.md 与当前 next-prompt.md；项目元数据、既有页面及授权轮次；可用 Stitch 工具和目标输出根目录”。依赖这些输入的写操作不执行。
 
-1. **Discover namespace**: Run `list_tools` to find the Stitch MCP prefix
-2. **Get or create project**:
-   - If `.stitch/metadata.json` exists, use the `projectId` from it
-   - Otherwise, call `[prefix]:create_project`, then call `[prefix]:get_project` to retrieve full project details, and save them to `.stitch/metadata.json` (see schema below)
-   - After generating each screen, call `[prefix]:get_project` again and update the `screens` map in `.stitch/metadata.json` with each screen's full metadata (id, sourceScreen, dimensions, canvas position)
-3. **Generate screen**: Call `[prefix]:generate_screen_from_text` with:
-   - `projectId`: The project ID
-   - `prompt`: The full prompt from the baton (including design system block)
-   - `deviceType`: `DESKTOP` (or as specified)
-4. **Retrieve assets**: Before downloading, check if `.stitch/designs/{page}.html` and `.stitch/designs/{page}.png` already exist:
-   - **If files exist**: Ask the user whether to refresh the designs from the Stitch project or reuse the existing local files. Only re-download if the user confirms.
-   - **If files do not exist**: Proceed with download:
-     - `htmlCode.downloadUrl` — Download and save as `.stitch/designs/{page}.html`
-      - `screenshot.downloadUrl` — Append `=w{width}` to the URL before downloading, where `{width}` is the `width` value from the screen metadata (Google CDN serves low-res thumbnails by default). Save as `.stitch/designs/{page}.png`
+**Q4：怎样判断完成？** page 不会逃逸站点根目录；本轮写入一次，未知结果先 get_project/list_screens/get_screen；未验证页面不标完成，停止状态不会自动续写。
 
-### Step 4: Integrate into Site
+**Q5：怎样定制？** 最大轮次、站点根、页面列表、缓存复用策略和系统模式；未提供时沿用现有项目值并标明假设。
 
-1. Move generated HTML from `.stitch/designs/{page}.html` to `site/public/{page}.html`
-2. Fix any asset paths to be relative to the public folder
-3. Update navigation:
-   - Find existing placeholder links (e.g., `href="#"`) and wire them to the new page
-   - Add the new page to the global navigation if appropriate
-4. Ensure consistent headers/footers across all pages
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-### Step 4.5: Visual Verification (Optional)
+## 按需参考
 
-If the **Chrome DevTools MCP Server** is available, verify the generated page:
-
-1. **Check availability**: Run `list_tools` to see if `chrome*` tools are present
-2. **Start dev server**: Use Bash to start a local server (e.g., `npx serve site/public`)
-3. **Navigate to page**: Call `[chrome_prefix]:navigate` to open `http://localhost:3000/{page}.html`
-4. **Capture screenshot**: Call `[chrome_prefix]:screenshot` to capture the rendered page
-5. **Visual comparison**: Compare against the Stitch screenshot (`.stitch/designs/{page}.png`) for fidelity
-6. **Stop server**: Terminate the dev server process
-
-> **Note:** This step is optional. If Chrome DevTools MCP is not installed, skip to Step 5.
-
-### Step 5: Update Site Documentation
-
-Modify `.stitch/SITE.md`:
-- Add the new page to Section 4 (Sitemap) with `[x]`
-- Remove any idea you consumed from Section 6 (Creative Freedom)
-- Update Section 5 (Roadmap) if you completed a backlog item
-
-### Step 6: Prepare the Next Baton (Critical)
-
-**You MUST update `.stitch/next-prompt.md` before completing.** This keeps the loop alive.
-
-1. **Decide the next page**:
-   - Check `.stitch/SITE.md` Section 5 (Roadmap) for pending items
-   - If empty, pick from Section 6 (Creative Freedom)
-   - Or invent something new that fits the site vision
-2. **Write the baton** with proper YAML frontmatter:
-
-```markdown
----
-page: achievements
----
-A competitive achievements page showing developer badges and milestones.
-
-**DESIGN SYSTEM (REQUIRED):**
-[Copy the entire design system block from .stitch/DESIGN.md]
-
-**Page Structure:**
-1. Header with title and navigation
-2. Badge grid showing unlocked/locked states
-3. Progress bars for milestone tracking
-```
-
-## File Structure Reference
-
-```
-project/
-├── .stitch/
-│   ├── metadata.json   # Stitch project & screen IDs (persist this!)
-│   ├── DESIGN.md       # Visual design system (from stitch-design-md skill)
-│   ├── SITE.md         # Site vision, sitemap, roadmap
-│   ├── next-prompt.md  # The baton — current task
-│   └── designs/        # Staging area for Stitch output
-│       ├── {page}.html
-│       └── {page}.png
-└── site/public/        # Production pages
-    ├── index.html
-    └── {page}.html
-```
-
-### `.stitch/metadata.json` Schema
-
-This file persists all Stitch identifiers so future iterations can reference them for edits or variants. Populate it by calling `[prefix]:get_project` after creating a project or generating screens.
-
-```json
-{
-  "name": "projects/6139132077804554844",
-  "projectId": "6139132077804554844",
-  "title": "My App",
-  "visibility": "PRIVATE",
-  "createTime": "2026-03-04T23:11:25.514932Z",
-  "updateTime": "2026-03-04T23:34:40.400007Z",
-  "projectType": "PROJECT_DESIGN",
-  "origin": "STITCH",
-  "deviceType": "MOBILE",
-  "designTheme": {
-    "colorMode": "DARK",
-    "font": "INTER",
-    "roundness": "ROUND_EIGHT",
-    "customColor": "#40baf7",
-    "saturation": 3
-  },
-  "screens": {
-    "index": {
-      "id": "d7237c7d78f44befa4f60afb17c818c1",
-      "sourceScreen": "projects/6139132077804554844/screens/d7237c7d78f44befa4f60afb17c818c1",
-      "x": 0,
-      "y": 0,
-      "width": 390,
-      "height": 1249
-    },
-    "about": {
-      "id": "bf6a3fe5c75348e58cf21fc7a9ddeafb",
-      "sourceScreen": "projects/6139132077804554844/screens/bf6a3fe5c75348e58cf21fc7a9ddeafb",
-      "x": 549,
-      "y": 0,
-      "width": 390,
-      "height": 1159
-    }
-  },
-  "metadata": {
-    "userRole": "OWNER"
-  }
-}
-```
-
-| Field | Description |
-|-------|-------------|
-| `name` | Full resource name (`projects/{id}`) |
-| `projectId` | Stitch project ID (from `create_project` or `get_project`) |
-| `title` | Human-readable project title |
-| `designTheme` | Design system tokens: color mode, font, roundness, custom color, saturation |
-| `deviceType` | Target device: `MOBILE`, `DESKTOP`, `TABLET` |
-| `screens` | Map of page name → screen object. Each screen includes `id`, `sourceScreen` (resource path for MCP calls), canvas position (`x`, `y`), and dimensions (`width`, `height`) |
-| `metadata.userRole` | User's role on the project (`OWNER`, `EDITOR`, `VIEWER`) |
-
-## Orchestration Options
-
-The loop can be driven by different orchestration layers:
-
-| Method | How it works |
-|--------|--------------|
-| **CI/CD** | GitHub Actions triggers on `.stitch/next-prompt.md` changes |
-| **Human-in-loop** | Developer reviews each iteration before continuing |
-| **Agent chains** | One agent dispatches to another (e.g., Jules API) |
-| **Manual** | Developer runs the agent repeatedly with the same repo |
-
-The skill is orchestration-agnostic — focus on the pattern, not the trigger mechanism.
-
-## Design System Integration
-
-This skill works best with the `stitch-design-md` skill:
-
-1. **First time setup**: Generate `.stitch/DESIGN.md` using the `stitch-design-md` skill from an existing Stitch screen
-2. **Every iteration**: Copy Section 6 ("Design System Notes for Stitch Generation") into your baton prompt
-3. **Consistency**: All generated pages will share the same visual language
-
-## Common Pitfalls
-
-- ❌ Forgetting to update `.stitch/next-prompt.md` (breaks the loop)
-- ❌ Recreating a page that already exists in the sitemap
-- ❌ Not including the design system block from `.stitch/DESIGN.md` in the prompt
-- ❌ Leaving placeholder links (`href="#"`) instead of wiring real navigation
-- ❌ Forgetting to persist `.stitch/metadata.json` after creating a new project
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Stitch generation fails | Check that the prompt includes the design system block |
-| Inconsistent styles | Ensure `.stitch/DESIGN.md` is up-to-date and copied correctly |
-| Loop stalls | Verify `.stitch/next-prompt.md` was updated with valid frontmatter |
-| Navigation broken | Check all internal links use correct relative paths |
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

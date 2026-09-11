@@ -1,138 +1,77 @@
 ---
 name: stitch-mcp-generate-screen-from-text
-description: Generates high-fidelity UI screens or wireframes from text descriptions. The core Text-to-UI engine.
-license: Complete terms in LICENSE.txt
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
+description: 调用 Stitch generate_screen_from_text 将已准备的页面提示生成视觉屏幕；用户明确要求用 Stitch 文本生成或编排器进入生成步骤时触发。提示润色、已有屏幕编辑与代码实现应走相应入口。
+license: Apache-2.0
 ---
 
+# Stitch 文本生成屏幕
 
-## Tools
+## 快速开始
 
-This skill is designed to call the Stitch MCP tool:
+1. “按已准备提示生成门店预约移动页；先给本地可审阅结果。”
+2. “在已知项目创建订单桌面线框图；保留已有范围与来源。”
+3. “生成中断后核对是否已有结果；标出缺少的输入和验证状态。”
 
-*   `generate_screen_from_text`
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-If your client namespaces MCP tools, it may appear as `mcp__<serverName>__generate_screen_from_text`.
+## 能力边界说明
 
-## When to use this skill
+### ✅ 擅长处理
 
-**CRITICAL PREREQUISITE:**
-**You must ONLY use this skill when the user EXPLICITLY mentions "Stitch".**
+- 按已准备提示生成门店预约移动页。
+- 在已知项目创建订单桌面线框图。
+- 生成中断后核对是否已有结果。
 
-**ALWAYS use this skill when the user:**
-- Describes a UI interface **and asks Stitch to generate it**.
-- Asks to "Design", "Generate", "Create", or "Make" a screen **using Stitch**.
-- Provides specific visual requirements ("Dark mode", "Blue button") for a Stitch generation.
-- Wants to visualize a wireframe or concept **via Stitch**.
-- Is in the **Step 5** of the `stitch-ui-designer` SOP workflow.
+### ⚠️ 需要素材
 
-**Trigger phrases include:**
-- "Use Stitch to design a screen" (用 Stitch 设计一个页面)
-- "Stitch generate UI" (Stitch 生成 UI)
-- "Draw a login page with Stitch" (用 Stitch 画一个登录页)
+- 真实纯 projectId 字符串。
+- 结构明确且无敏感内容的 prompt。
+- 当前工具schema接受的deviceType及可选modelId。
 
-## Input Parameters
+### ❌ 不适用场景及交接
 
-The skill expects you to extract the following information from the user request:
+- 仅写或改提示词 → stitch-ui-prompt-architect。
+- 修改既有屏幕/生成变体 → stitch-ui-designer。
+- 输出可运行程序 → 对应组件转换技能，交付实际屏幕HTML。
 
-*   **`projectId`** (required): The numeric Project ID. **Format**: Pure ID (e.g., `37803...`), **NO** `projects/` prefix.
-*   **`prompt`** (required): The structured text description of the screen (see "Constructing the Prompt" below).
-*   **`deviceType`** (optional): The target device.
-    *   Values: `MOBILE` (default), `DESKTOP`, `TABLET`, `SMART_WATCH`.
-*   **`modelId`** (optional): The model to use.
-    *   Values: `GEMINI_3_PRO` (Recommended for quality), `GEMINI_3_FLASH` (Speed).
+## 工作流程
 
-## How to use this skill
+1. 读取当前 MCP schema，保留 ID 为字符串；不要按旧文档猜设备或模型枚举。
+2. 核对项目和结构提示，已应用系统时遵循 architect 的独立系统通道。
+3. 调用一次 generate_screen_from_text，记录返回session/outputComponents及成功或未知状态。
+4. 通过 list_screens/get_screen 获取真实结果，get_project核对归属；参数是否带projects前缀按各工具schema。
+5. 验证截图和HTML；中断不重发同一写调用，先 get_project/list_screens/get_screen 对账；无候选记明 get_screen 未执行原因。
 
-### 0. Call the MCP Tool
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-Invoke `generate_screen_from_text` with:
+## 安全与结果验证
 
-*   `projectId` (pure numeric string, no `projects/`)
-*   `prompt`
-*   `deviceType` (optional)
-*   `modelId` (optional)
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-### 1. Constructing the Prompt (The Art of Prompting)
-The `prompt` argument is the most critical factor for quality. Do not just pass the user's raw input. You **MUST** enrich it using the **Structure Strategy**:
+- 模型和设备属于当前schema而非历史猜测。
+- sessionId不被当screenId。
+- 写成功与资产下载/视觉验证分开记录。
 
-`[Device] [Mode] [Screen Type]. [Style]. [Layout]. [Components].`
+可定制：设备、已验证模型、prompt、项目、输出资产目录。增值检查：schema实时核对；session与screen区分；写中断恢复。
 
-*   **Context**: "Mobile High-Fidelity login screen."
-*   **Style**: "Cyberpunk aesthetic. Dark mode. Neon blue accents."
-*   **Layout**: "Center-aligned vertical stack."
-*   **Components**: "Glitch-effect Logo. Input fields with glowing borders. Primary 'Jack In' button."
+## FAQ
 
-### 2. Choosing Device Type (`deviceType`)
-*   `MOBILE` (Default): Vertical layouts, ~375px width. Best for consumer apps.
-*   `DESKTOP`: Horizontal layouts, ~1440px width. Best for SaaS, Dashboards, Landing Pages.
-*   `TABLET`: Hybrid layouts.
-*   `SMART_WATCH`: Tiny, compact layouts.
+**Q1：交付的主要结果是什么？** 本地输入 projectId='123'、deviceType='TABLET'、三段预约提示 → 待调用参数草案；没有工具回执则 screenId 未确认，不虚构。
 
-### 3. Choosing Model (`modelId`)
-*   `GEMINI_3_PRO`: **Recommended**. High intelligence, better instruction following, superior aesthetics. Use for all complex/final designs.
-*   `GEMINI_3_FLASH`: Faster, lower cost. Good for simple wireframes or rapid iteration.
+**Q2：什么时候应换用其他入口？** 仅写或改提示词 → stitch-ui-prompt-architect；修改既有屏幕/生成变体 → stitch-ui-designer；输出可运行程序 → 对应组件转换技能，交付实际屏幕HTML。
 
-## Best Practices
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：真实纯 projectId 字符串；结构明确且无敏感内容的 prompt；当前工具schema接受的deviceType及可选modelId”。依赖这些输入的写操作不执行。
 
-1.  **Detailed Components**: Don't just say "Form". Say "Form with Email, Password, and Eye toggle icon".
-2.  **Color Precision**: Mention specific colors (e.g., "Emerald Green", "#FF5733") if the user specifies them.
-3.  **Content Realism**: Ask for realistic text placeholders (e.g., "Welcome back, Alice" instead of "Lorem Ipsum").
-4.  **Device Alignment**: Ensure the `prompt` description matches the `deviceType` (e.g., don't ask for a "Sidebar" on `MOBILE`).
-5.  **No Code Generation**: This skill generates **Visual Designs**, not implementation code. Do not confuse with coding skills (like `uniappx-project-creator`).
+**Q4：怎样判断完成？** 模型和设备属于当前schema而非历史猜测；sessionId不被当screenId；写成功与资产下载/视觉验证分开记录。
 
-## Output Handling
+**Q5：怎样定制？** 设备、已验证模型、prompt、项目、输出资产目录；未提供时沿用现有项目值并标明假设。
 
-`generate_screen_from_text` returns session info (e.g., `sessionId` and `outputComponents`). It may not return a screenshot directly.
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-After the generation completes, retrieve the resulting screen(s) via:
+## 按需参考
 
-1.  `list_screens` with `projectId` in the format `projects/{id}`.
-2.  `get_screen` with the selected `screenId` to fetch screenshot / html assets.
-
-## Interrupted writes and deletion safety
-
-`generate_screen_from_text`, `edit_screens` and `generate_variants` are non-idempotent writes. If a write times out or its connection is interrupted, **do not resubmit the same write call**. Reconcile the actual remote state first with `get_project`, `list_screens` and `get_screen`; issue a new write only when those reads show it is still required.
-
-Deleting a project requires the user's explicit confirmation immediately before the delete call. Never infer deletion approval from a request to generate, edit, retry or clean up a design.
-
-## Keywords
-
-**English keywords:**
-generate screen, design ui, create interface, make page, draw wireframe, text to ui, ui generation, stitch gen, mobile design, desktop design, dashboard, login, prompt engineering
-
-**Chinese keywords (中文关键词):**
-生成页面, 设计UI, 创建界面, 画图, 制作网页, 文本生成UI, 界面设计, 移动端设计, 桌面端设计, 仪表盘, 登录页, 线框图, 生成代码
-
-## References
-
-- [Examples](examples/usage.md)
-- [Desktop Dashboard Example](examples/desktop_dashboard.md)
-- [Mobile App Example](examples/mobile_app.md)
-- [Wireframe Example](examples/wireframe.md)
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

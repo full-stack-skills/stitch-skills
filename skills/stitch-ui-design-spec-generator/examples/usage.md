@@ -1,6 +1,6 @@
 # stitch-ui-design-spec-generator — Usage Examples
 
-Use this skill internally (by thinking) before creating a Stitch project or generating a prompt. Input may be a one-shot user request or a PRD document/summary; see [docs/prd-to-stitch-workflow.md](../../docs/prd-to-stitch-workflow.md) for the full PRD-driven flow.
+Use this skill internally (by thinking) before creating a Stitch project or generating a prompt. Input may be a one-shot user request or a PRD document/summary; see [Stitch orchestration workflow](../../stitch-ui-designer/SKILL.md) for the full PRD-driven flow.
 
 ---
 
@@ -86,4 +86,4 @@ When the user provides a PRD file path or pasted PRD content, extract **function
 
 ---
 
-After producing the JSON, the next steps in the PRD-driven workflow are: choose a framework (stitch-ui-design-spec-*), then use stitch-ui-prompt-architect to build the full Stitch prompt. See [docs/prd-to-stitch-workflow.md](../../docs/prd-to-stitch-workflow.md).
+After producing the JSON, the next steps in the PRD-driven workflow are: choose a framework (stitch-ui-design-spec-*), then use stitch-ui-prompt-architect to build the full Stitch prompt. See [Stitch orchestration workflow](../../stitch-ui-designer/SKILL.md).

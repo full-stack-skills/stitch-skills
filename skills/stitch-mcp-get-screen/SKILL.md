@@ -1,10 +1,7 @@
 ---
 name: stitch-mcp-get-screen
 description: Retrieves the full details of a specific screen, including HTML code.
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
+allowed-tools: stitch*:* Read Write
 ---
 
 

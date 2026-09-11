@@ -1,10 +1,7 @@
 ---
 name: stitch-ui-design-spec-generator
 description: Translates user requirements into structured Design Specs for Theme, Color, and Typography.
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
+allowed-tools: stitch*:* Read Write
 ---
 
 

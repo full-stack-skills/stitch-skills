@@ -1,107 +1,77 @@
 ---
 name: stitch-remotion
-description: Build Remotion walkthrough videos when the user wants to present Stitch screen assets with transitions, zoom and narration. Use stitch-react-components for an interactive React application, not this video workflow.
-allowed-tools:
-  - "stitch*:*"
-  - "remotion*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+description: 将 Stitch 屏幕资产编排成 Remotion 走查视频；用户需要转场、缩放、字幕或旁白演示时触发。交互式 React 应用与实时屏幕录制不属于本入口。
+license: Apache-2.0
 ---
 
+# Stitch 屏幕走查视频
 
-# Stitch to Remotion Walkthrough Videos
+## 快速开始
 
-**Constraint**: Only use this skill when the user explicitly mentions "Stitch" and walkthrough video or Remotion.
+1. “为门店预约三步流程制作视频；先给本地可审阅结果。”
+2. “展示订单页的重点区域缩放；保留已有范围与来源。”
+3. “为已有截图编排中文标题与旁白；标出缺少的输入和验证状态。”
 
-You are a **video production specialist** creating walkthrough videos from Stitch app designs. Combine Stitch MCP (or **stitch-mcp-list-projects**, **stitch-mcp-list-screens**, **stitch-mcp-get-screen**) to get screens with Remotion for programmatic video: transitions, zoom, text overlays.
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-## Prerequisites
+## 能力边界说明
 
-- Stitch MCP Server (https://stitch.withgoogle.com/docs/mcp/guide/)
-- Remotion MCP or Remotion CLI; Node.js and npm
-- A Stitch project with designed screens
+### ✅ 擅长处理
 
-## Retrieval and Networking
+- 为门店预约三步流程制作视频。
+- 展示订单页的重点区域缩放。
+- 为已有截图编排中文标题与旁白。
 
-1. **Discover prefixes**: Run `list_tools` for Stitch and Remotion MCP prefixes.
-2. **Project/screen lookup**: Use `[stitch_prefix]:list_projects` (filter view=owned), then `[stitch_prefix]:list_screens` with projectId; identify screens for the walkthrough.
-3. **Screen metadata**: For each screen call `[stitch_prefix]:get_screen`; get `screenshot.downloadUrl`, `htmlCode.downloadUrl`, width, height, title, description.
-4. **Asset download**: Do not assume local HTML or screenshots exist. Download the returned screenshot URLs with [scripts/download-stitch-asset.sh](scripts/download-stitch-asset.sh); save to `video/public/assets/screens/{screen-name}.png` in walkthrough order. Run the script with Bash, HTTPS URL and output path; it requires curl/mktemp, stages atomically, bounds the transfer, and preserves existing output on failure. Keep signed URLs private; refresh expired URLs through `get_screen`.
-5. **Manifest**: Create `screens.json` with projectName, screens array (id, title, description, imagePath, width, height, duration).
+### ⚠️ 需要素材
 
-## Video Composition Strategy
+- 屏幕资产与实际尺寸。
+- 顺序、时长、帧率和输出比例。
+- 已有 Remotion 工程及可用依赖。
 
-- **ScreenSlide.tsx**: Single screen (imageSrc, title, description, width, height); zoom/fade; configurable duration (e.g. 3–5 s).
-- **WalkthroughComposition.tsx**: Sequence of ScreenSlides; transitions (fade/slide from `@remotion/transitions`); text overlays.
-- **Config**: Frame rate (e.g. 30 fps), dimensions (match Stitch or scale), total duration.
+### ❌ 不适用场景及交接
 
-Use Remotion `spring()` for zoom; use `@remotion/transitions` (fade, slide) between screens.
+- 可点击 Web 应用 → stitch-react-components。
+- 重新生成 Stitch 页面 → stitch-ui-designer。
+- 真实业务操作录屏 → 使用已授权录屏流程，提供分镜清单。
 
-### Common Patterns (align with official)
+## 工作流程
 
-- **Simple slide show**: 3–5 s per screen, cross-fade, bottom text overlay (screen title), progress bar at top.
-- **Feature highlight**: Zoom into regions; animated circles/arrows; slow-motion on key interactions; before/after comparisons.
-- **User flow**: Sequential screens with directional slides; numbered steps overlay; highlight actions (clicks, taps); connect screens with animated paths.
+1. 确认屏幕顺序，检索/下载所需图片到 video/public/assets/screens，保护 signed URL。
+2. 写 screens.json 的尺寸、标题、时长和 imagePath，采用真实返回资产。
+3. 按模板生成 ScreenSlide 与 TransitionSeries，转场是 Sequence 之间的兄弟节点。
+4. 统一 Remotion 依赖版本，计算总帧数=各场景帧数之和-重叠；每段必须长于转场。
+5. 预览后渲染并核对首帧、转场、尾帧、字幕和旁白；未渲染时仅报告分镜或源码产物。
 
-### Optional: Voiceover and dynamic text
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-- **Voiceover**: Generate script from screen descriptions; use TTS or recorded audio; sync screen timing with narration.
-- **Dynamic text**: Download `htmlCode.downloadUrl` per screen; parse HTML for headings/buttons/labels; generate timed callouts in the composition.
+## 安全与结果验证
 
-## Execution Steps
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-1. **Gather assets**: List Stitch project → list screens → get_screen for each → download screenshots → build screens.json.
-2. **Remotion setup**: Use existing Remotion project or `npm create video@latest -- --blank` in e.g. `video/`; install `@remotion/transitions` etc.
-3. **Build components**: Copy [screen-slide-template.tsx](resources/screen-slide-template.tsx) to `video/src/ScreenSlide.tsx` and [WalkthroughComposition.tsx](examples/WalkthroughComposition.tsx) to `video/src/WalkthroughComposition.tsx`; put the manifest at `video/screens.json`. Register `RemotionRoot` through the project's `registerRoot` entry. Keep Remotion package versions aligned. TransitionSeries transitions are siblings between sequences with `linearTiming`, and total duration subtracts overlapping transition frames. The 20-frame example requires every scene to exceed 20 frames; zoom happens inside ScreenSlide, while transitionType zoom falls back to fade.
-4. **Preview**: `npm run dev` in video/; adjust timing and transitions.
-5. **Render**: `npx remotion render WalkthroughComposition output.mp4` (or use Remotion MCP if available).
-6. **Verify**: Follow [composition-checklist.md](resources/composition-checklist.md). Check each actual asset, aspect ratio, text contrast/captions, narration pacing and first/transition/final frames. At 30 fps, two 4-second screens with one 20-frame transition yield 220 frames. CLI exit success alone is not visual acceptance; report render path, frames and checks actually performed.
+- 两段各4秒、30fps、一次20帧转场=220帧。
+- staticFile 路径相对 public。
+- 最终视频实际帧数、比例和关键帧经过检查。
 
-## Integration with This Repo
+可定制：fps、画布尺寸、每屏duration、转场类型、旁白和字幕。增值检查：可复算帧数；资产manifest；重点区域/旁白同步。
 
-- **Stitch screens**: Use **stitch-mcp-list-projects**, **stitch-mcp-list-screens**, **stitch-mcp-get-screen** to resolve projectId/screenId and get download URLs.
-- **Design consistency**: If DESIGN.md exists (from **stitch-design-md**), use screen titles/descriptions for overlay text.
+## FAQ
 
-## File Structure
+**Q1：交付的主要结果是什么？** 演示输入 2×4秒、30fps、转场20帧 → durationInFrames=220；这是假设分镜计算，未声称已生成视频。
 
-```
-project/
-├── video/
-│   ├── src/
-│   │   ├── WalkthroughComposition.tsx
-│   │   ├── ScreenSlide.tsx
-│   │   └── Root.tsx
-│   ├── public/assets/screens/   # Stitch screenshots
-│   ├── remotion.config.ts
-│   └── package.json
-├── screens.json                 # Screen manifest
-└── output.mp4
-```
+**Q2：什么时候应换用其他入口？** 可点击 Web 应用 → stitch-react-components；重新生成 Stitch 页面 → stitch-ui-designer；真实业务操作录屏 → 使用已授权录屏流程，提供分镜清单。
 
-## Troubleshooting
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：屏幕资产与实际尺寸；顺序、时长、帧率和输出比例；已有 Remotion 工程及可用依赖”。依赖这些输入的写操作不执行。
 
-| Issue | Solution |
-|-------|----------|
-| Blurry screenshots | Use full-resolution screenshot URLs |
-| Misaligned text | Match composition size to screen dimensions |
-| Choppy animations | Increase fps; tune spring damping |
-| Build fails | Check Node/Remotion version; install deps |
+**Q4：怎样判断完成？** 两段各4秒、30fps、一次20帧转场=220帧；staticFile 路径相对 public；最终视频实际帧数、比例和关键帧经过检查。
 
-## Keywords
+**Q5：怎样定制？** fps、画布尺寸、每屏duration、转场类型、旁白和字幕；未提供时沿用现有项目值并标明假设。
 
-**English:** Stitch, Remotion, walkthrough, video, screenshots, transitions.  
-**中文关键词：** Stitch、Remotion、走查视频、转场。
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-## References
+## 按需参考
 
-- [Remotion docs](https://www.remotion.dev/docs/)
-- [Remotion transitions](https://www.remotion.dev/docs/transitions)
-- [Remotion Skills](https://github.com/remotion-dev/remotion/tree/main/packages/skills) — animation, composition patterns, performance; install with `npx skills add remotion-dev/skills`.
-- [Remotion MCP](https://www.remotion.dev/docs/ai/mcp) — programmatic render and preview.
-- [Stitch MCP](https://stitch.withgoogle.com/docs/mcp/guide/)
-- [Examples](examples/usage.md)
-- [Screens Manifest Example](examples/screens.json)
-- Bundled templates and checklist above are adapted from [google-labs-code/stitch-skills](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f/plugins/stitch-build/skills/remotion).
-- [TransitionSeries contract](https://www.remotion.dev/docs/transitions/transitionseries) — sibling transitions and overlap duration; check installed version before rendering.
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

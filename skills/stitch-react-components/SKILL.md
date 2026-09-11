@@ -1,82 +1,77 @@
 ---
 name: stitch-react-components
-description: Convert or sync Stitch HTML screens to modular Vite/React components when the requested deliverable is React code with token and navigation validation. Use stitch-shadcn-ui for shadcn component migration and stitch-remotion for videos.
-allowed-tools:
-  - "stitch*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+description: 将 Stitch HTML/屏幕转换或同步为 React/Vite 组件；需要 token、组件 Props 和导航一致性校验时触发。shadcn 原语迁移、数据看板、React Native 或视频使用各自规范入口。
+license: Apache-2.0
 ---
 
+# Stitch 转 React 组件
 
-# Stitch to React Components
+## 快速开始
 
-**Constraint**: Only use this skill when the user explicitly mentions "Stitch" and converting Stitch screens to React (Vite/React, TypeScript).
+1. “把门店预约 Stitch 页转 React 组件；先给本地可审阅结果。”
+2. “修复桌面品牌标识没有返回首页的问题；保留已有范围与来源。”
+3. “将新的设计 token 同步到已有 React 页面；标出缺少的输入和验证状态。”
 
-You are a **frontend engineer** turning Stitch designs into clean, modular React code. Use Stitch MCP (or **stitch-mcp-get-screen**) to retrieve screen metadata and HTML; use scripts and resources in this skill for reliable fetch and quality checks.
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-## Prerequisites
+## 能力边界说明
 
-- Stitch MCP Server (https://stitch.withgoogle.com/docs/mcp/guide/)
-- Node.js and npm (for Vite/React project and optional validation)
-- Stitch project and screen IDs — **two ways**: (1) From a **Stitch design URL**: parse **projectId** (path) and **screenId** (`node-id` query). (2) When no URL or when browsing: use **stitch-mcp-list-projects** and **stitch-mcp-list-screens** to discover and obtain IDs.
+### ✅ 擅长处理
 
-## Retrieval and Networking
+- 把门店预约 Stitch 页转 React 组件。
+- 修复桌面品牌标识没有返回首页的问题。
+- 将新的设计 token 同步到已有 React 页面。
 
-1. **Discover Stitch MCP prefix**: Run `list_tools` to find the prefix (e.g. `mcp_stitch__stitch:`).
-2. **Fetch screen metadata**: Use `list_screens` to enumerate the requested screens, then call `[prefix]:get_screen` for each with `projectId` and `screenId` preserved as strings (screen IDs may be hexadecimal). Obtain `htmlCode.downloadUrl`, `screenshot.downloadUrl`, dimensions and deviceType. Do not assume local HTML exists or is current.
-3. **High-reliability HTML download**: AI fetch tools can fail on Google Cloud Storage URLs. Use Bash to run the skill script:
-   ```bash
-   bash scripts/fetch-stitch.sh "<htmlCode.downloadUrl>" "temp/source.html"
-   ```
-   This uses `curl -L` for redirects and TLS. Ensure the URL is quoted.
-4. **Visual reference**: Use `screenshot.downloadUrl` to confirm layout and details.
-5. **Sync provenance**: For each requested screen, store HTML and screenshot under the target app's `.stitch/designs/`; preserve existing assets unless refresh is authorized. Use cached assets only when their provenance matches and reuse is intended. On Google image URLs supporting sizing, request `=w{width}` from returned metadata and inspect the actual image dimensions. Fetch `get_project`; update the app's `.stitch/metadata.json` with projectId, title, deviceType, `Last Sync Time` (ISO time), and a screens map (ID, label, sourceScreen, dimensions, canvasPosition). Mirror only within an authorized workspace.
+### ⚠️ 需要素材
 
-## Architectural Rules
+- 目标 React 工程与现有工具链。
+- 指定 Stitch 屏幕或有来源的缓存资产。
+- 路由表、主题和组件行为契约。
 
-- **Modular components**: Split the design into separate files; avoid one giant file.
-- **Logic isolation**: Put event handlers and business logic in `src/hooks/`.
-- **Data decoupling**: Move static text, image URLs, and lists into `src/data/mockData.ts`.
-- **Type safety**: Every component must have a `Readonly` TypeScript interface `[ComponentName]Props`.
-- **Project-specific**: Do not add unrelated license headers to new code; retain required notices when adapting upstream source.
-- **Style mapping**: Extract `tailwind.config` from HTML `<head>`; sync with `resources/style-guide.json` if present; use theme-mapped Tailwind classes instead of raw hex.
-- **Fresh tokens**: The bundled style-guide is an example, not the project's palette. Extract colors, fonts, spacing, radii and typography into a project-local style-guide; verify it against this project's HTML and DESIGN.md before drafting. Preserve the installed Skill resources.
-- **Navigation**: Replace placeholder `href="#"` with React Router `<Link>` routes (or the existing router's equivalent). Make the top-bar logo/title a home link; wire sidebar and bottom navigation with active states. Check desktop home navigation when mobile bottom bars use `md:hidden`.
-- **Dark mode**: Where the target supports dark mode, map every color role to matching `dark:` variants; verify both themes instead of copying fixed sample colors.
+### ❌ 不适用场景及交接
 
-## Execution Steps
+- React Native 原生界面 → stitch-react-native。
+- shadcn 原语迁移 → stitch-shadcn-ui。
+- Remotion 走查视频 → stitch-remotion，交付屏幕资产清单。
 
-1. **Environment**: If the project has no `node_modules`, run `npm install` so validation (if used) works.
-2. **Data layer**: Create `src/data/mockData.ts` from the design content.
-3. **Component drafting**: Use `resources/component-template.tsx` as base; replace all `StitchComponent` with the real component name.
-4. **Wiring**: Update the app entry (e.g. `App.tsx`) to render the new components.
-5. **Quality check**: Use the bundled [AST validator](scripts/validate.js): install its locked dependencies with `npm ci --prefix <skill-dir>`, then `node <skill-dir>/scripts/validate.js <absolute-component.tsx>` for each component/page. It checks parseability, a Props interface, and literal className hex values; it does not prove Readonly use, routing or visual correctness. Run the target project's TypeScript check (`tsc --noEmit` through its installed toolchain), [architecture checklist](resources/architecture-checklist.md), and proportional visual checks. Report skipped checks explicitly.
+## 工作流程
 
-## Integration with This Repo
+1. 检索所需屏幕 HTML/截图，保留 ID 字符串与来源时间；缓存按授权复用或刷新。
+2. 从当前 HTML 和 DESIGN.md 提取 token 到目标工程，避免覆盖安装 Skill 的示例资源。
+3. 拆组件、数据与 hooks，使用 readonly Props；保持目标项目约定。
+4. 接入既有路由；品牌 logo 和桌面导航可返回首页，移动底栏隐藏时桌面仍有入口。
+5. 执行脚本 AST 检查、项目类型/构建检查与比例合适的视图验证，分开报告各层证据。
 
-- **Get screen**: Use **stitch-mcp-get-screen** (or MCP `get_screen`) with projectId and screenId. Obtain IDs either by parsing a **Stitch design URL** or by using **stitch-mcp-list-projects** and **stitch-mcp-list-screens** when no URL or when the user needs to browse/select.
-- **Design system**: If the project has DESIGN.md (from **stitch-design-md**), align colors and typography with that semantic system when mapping to Tailwind. When converting Stitch HTML to React, use [references/tailwind-to-react.md](references/tailwind-to-react.md) for theme-mapped Tailwind (tokens → tailwind.config); keep Tailwind classes in output, map Stitch tokens to project theme.
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-## Troubleshooting
+## 安全与结果验证
 
-- **Fetch errors**: Quote the URL in the bash command to avoid shell issues; ensure `scripts/fetch-stitch.sh` is executable.
-- **Validation errors**: Fix missing Props interfaces and hardcoded styles per the AST report; follow [resources/architecture-checklist.md](resources/architecture-checklist.md).
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-## Keywords
+- AST 仅证明解析、Props 和字面 className hex 检查。
+- 所有主题角色来源于当前设计。
+- 首页链接和各路由都有可验证目标。
 
-**English:** Stitch, React, Vite, components, validation, mockData, Tailwind.  
-**中文关键词：** Stitch、React、组件、校验、Tailwind。
+可定制：页面范围、目标目录、路由器、主题模式、刷新策略。增值检查：同步来源；桌面/移动导航核对；AST 能力边界。
 
-## References
+## FAQ
 
-- **Examples**: [examples/usage.md](examples/usage.md)
-- **Style Mapping**: [references/tailwind-to-react.md](references/tailwind-to-react.md) — Theme-mapped Tailwind when converting Stitch HTML; keep Tailwind classes, sync Stitch tokens to tailwind.config.
-- **Resources**:
-    - [resources/architecture-checklist.md](resources/architecture-checklist.md)
-    - [resources/component-template.tsx](resources/component-template.tsx)
-- **Scripts**: [scripts/fetch-stitch.sh](scripts/fetch-stitch.sh)
-- **API and sync mapping**: [resources/stitch-api-reference.md](resources/stitch-api-reference.md)
-- **Component example**: [examples/gold-standard-card.tsx](examples/gold-standard-card.tsx) — adapt routes and project tokens before use; structural AST success alone is insufficient.
-- [Stitch API / MCP](https://stitch.withgoogle.com/docs/mcp/guide/)
+**Q1：交付的主要结果是什么？** 输入桌面顶栏“门店预约”与路由 / → 使用既有路由 Link to="/"；截图与 HTML 来源记录在 .stitch；AST 通过不替代浏览器点击测试。
+
+**Q2：什么时候应换用其他入口？** React Native 原生界面 → stitch-react-native；shadcn 原语迁移 → stitch-shadcn-ui；Remotion 走查视频 → stitch-remotion，交付屏幕资产清单。
+
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：目标 React 工程与现有工具链；指定 Stitch 屏幕或有来源的缓存资产；路由表、主题和组件行为契约”。依赖这些输入的写操作不执行。
+
+**Q4：怎样判断完成？** AST 仅证明解析、Props 和字面 className hex 检查；所有主题角色来源于当前设计；首页链接和各路由都有可验证目标。
+
+**Q5：怎样定制？** 页面范围、目标目录、路由器、主题模式、刷新策略；未提供时沿用现有项目值并标明假设。
+
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
+
+## 按需参考
+
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

@@ -1,172 +1,77 @@
 ---
 name: stitch-react-native
-description: >-
-  Convert Stitch HTML designs to React Native components, or syncs/updates existing
-  native components to align with the latest Stitch designs, using StyleSheet.
-allowed-tools:
-  - "stitch*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+description: 将 Stitch 屏幕转为 React Native 或同步现有原生组件；目标是 iOS/Android 的 View、Text、StyleSheet 和原生导航时触发。React DOM 或 Vite Web 页面使用 stitch-react-components。
+license: Apache-2.0
 ---
 
-# Stitch to React Native Components
+# Stitch 转 React Native
 
-You are a mobile engineer focused on transforming Stitch web designs into clean, production-ready React Native code or syncing/updating existing native components to align with the latest Stitch designs. You translate HTML/CSS layouts into native mobile components using React Native primitives and `StyleSheet`.
+## 快速开始
 
-> **CRITICAL: Every step in this skill is MANDATORY. Do NOT skip any step or take shortcuts. Each section contains a GATE that must be satisfied before proceeding.**
+1. “将门店预约稿转 iOS/Android 表单；先给本地可审阅结果。”
+2. “把运营列表改为原生 FlatList；保留已有范围与来源。”
+3. “同步当前 Stitch 主题到既有 RN 工程；标出缺少的输入和验证状态。”
 
-## Phase 1: Retrieval and networking
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-> **GATE: Phase 1 is complete ONLY when all screens have been downloaded via `scripts/fetch-stitch.sh` AND visually audited. Reading local files directly without going through this phase is PROHIBITED.**
+## 能力边界说明
 
-1. **Namespace discovery**: Run `list_tools` to find the Stitch MCP prefix. Use this prefix (e.g., `stitch:`) for all subsequent calls.
-2. **Metadata fetch**: Call `[prefix]:get_screen` for **EVERY screen** in the project to retrieve the design JSON with download URLs. Do NOT skip any screen.
-3. **Check for existing designs**: Before downloading, check if `.stitch/designs/{page}.html` and `.stitch/designs/{page}.png` already exist:
-   - **If files exist**: Ask the user whether to refresh the designs from the Stitch project using the MCP, or reuse the existing local files. **You MUST ask — do not assume.** Only re-download if the user confirms.
-   - **If files do not exist**: Proceed to step 4.
-4. **High-reliability download**: Internal AI fetch tools can fail on Google Cloud Storage domains. You MUST use the provided script.
-   - **HTML**: `bash scripts/fetch-stitch.sh "[htmlCode.downloadUrl]" ".stitch/designs/{page}.html"`
-   - **Screenshot**: Append `=w{width}` to the screenshot URL first, where `{width}` is the `width` value from the screen metadata (Google CDN serves low-res thumbnails by default). Then run: `bash scripts/fetch-stitch.sh "[screenshot.downloadUrl]=w{width}" ".stitch/designs/{page}.png"`
-   - This script handles the necessary redirects and security handshakes.
-5. **Visual audit**: Review the downloaded screenshot (`.stitch/designs/{page}.png`) to confirm design intent and layout details. **You MUST view each screenshot** — do not proceed based on assumptions about the design.
-6. **Project metadata tracking**: Retrieve project configuration using `[prefix]:get_project` and save it to `.stitch/metadata.json` (inside the app folder, and mirrored in the workspace root). Ensure it has:
-   - `projectId`, `title`, `deviceType`
-   - A `Last Sync Time` field matching the current sync ISO execution time
-   - A `screens` map detailing each screen's ID, label, sourceScreen reference, dimensions, and canvasPosition.
+### ✅ 擅长处理
 
-### Anti-patterns for Phase 1
-- ❌ Reading `.stitch/designs/*.html` directly without calling MCP `get_screen` first.
-- ❌ Skipping the `fetch-stitch.sh` download script.
-- ❌ Not asking the user when existing files are found.
-- ❌ Skipping the visual audit of `.png` screenshots.
-- ❌ Failing to generate or update `.stitch/metadata.json` and its `Last Sync Time` field upon syncing.
+- 将门店预约稿转 iOS/Android 表单。
+- 把运营列表改为原生 FlatList。
+- 同步当前 Stitch 主题到既有 RN 工程。
 
-## Phase 2: Theme extraction
+### ⚠️ 需要素材
 
-> **GATE: Phase 2 is complete ONLY when `src/theme.ts` has been created or updated with tokens extracted from the current project's HTML `<head>`. Hardcoding color hex codes or using themes from a different project is NOT acceptable.**
+- 目标 RN 工程与实际依赖版本。
+- 所选 Stitch 屏幕或获准复用的 HTML/截图。
+- 平台、导航及 token 约束。
 
-1. **Extract `tailwind.config`**: Open each downloaded HTML file and locate the `tailwind.config` object in the `<head>` `<script>` block. Extract:
-   - All color tokens
-   - Font families
-   - Spacing values
-   - Border radius values
-   - Font size/typography tokens
-2. **Create/Sync `src/theme.ts`**: Write the extracted tokens to `src/theme.ts` as TypeScript constants. Ensure every color, spacing, and typography value has a corresponding token.
-3. **Verify theme**: Confirm the theme colors and fonts in `src/theme.ts` match what you extracted from the HTML design.
+### ❌ 不适用场景及交接
 
-### Anti-patterns for Phase 2
-- ❌ Hardcoding color hex codes or rgba strings directly inside component StyleSheet declarations.
-- ❌ Using theme tokens from a previous project without extracting them from the new design.
-- ❌ Skipping the creation/update of `src/theme.ts`.
+- React/Vite 浏览器 UI → stitch-react-components。
+- Jetpack Compose 或 SwiftUI 实现 → 对应平台开发流程，交付设计映射。
+- 真实支付、登录或推送集成 → 项目业务接口流程，保留 UI 状态契约。
 
-## Phase 3: Architectural rules and HTML mapping
+## 工作流程
 
-> **GATE: Every component MUST satisfy ALL of the following rules. Violations will cause `npm run validate` to fail.**
+1. 按用户选定屏幕检索 HTML/截图与元数据，缓存来源一致且允许复用时直接使用。
+2. 提取当前项目 token 到 src/theme.ts；保留来源与同步时间。
+3. 将 div→View、文本→Text、button→Pressable、长列表→FlatList；用 StyleSheet 与当前 RN 版本能力映射。
+4. 按工程惯例拆组件/数据/hooks，连接既有原生导航，保留 readonly Props、safe-area 与无障碍标签。
+5. 使用脚本做有限 AST 检查，再执行现有类型检查；模拟器验收另行记录，不把脚本通过当原生运行成功。
 
-### Element mapping
-Map HTML elements to React Native components using these rules:
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-| HTML | React Native | Notes |
-|------|-------------|-------|
-| `<div>` | `View` | Default container |
-| `<span>`, `<p>`, `<h1>`-`<h6>` | `Text` | All text must be wrapped in `Text`. Nest `Text` for inline styling. |
-| `<img>` | `Image` | Use `source={{ uri }}` for remote images, `require()` for local assets. |
-| `<button>`, `<a>` | `Pressable` | Prefer `Pressable` over `TouchableOpacity`. Use `onPress` instead of `onClick`. |
-| `<input>` | `TextInput` | Map `placeholder`, `value`, `onChangeText`. |
-| `<scroll container>` | `ScrollView` | For short lists only. Use `FlatList` for long or dynamic lists. |
-| `<ul>`/`<ol>` with many items | `FlatList` | Requires `data`, `renderItem`, `keyExtractor`. |
-| `<section>` with grouped data | `SectionList` | For grouped data with headers. Use tab navigator for tab-based layouts. |
-| `<select>` | Third-party picker or custom modal | React Native has no built-in select. |
-| `<svg>` | `react-native-svg` | Convert SVG markup to `Svg`, `Path`, `Circle`, etc. |
-| Root wrapper | `SafeAreaView` | Wrap top-level screens to avoid notch/status bar overlap. |
+## 安全与结果验证
 
-### Style mapping
-CSS and Tailwind classes do not work in React Native. Convert all styles to `StyleSheet.create()`:
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-* **Layout**: Flexbox is the default layout system. `flexDirection` defaults to `'column'` (not `'row'` like web CSS).
-  - `display: flex` is implicit on every `View`.
-  - `justify-content` maps to `justifyContent`.
-  - `align-items` maps to `alignItems`.
-  - `gap` maps to `gap` (React Native 0.71+). For older versions, use `marginBottom` on children.
-* **Dimensions**: Use numbers (not strings). `width: 100` means 100 density-independent pixels.
-  - Percentage strings are supported: `width: '100%'`.
-  - For responsive sizing, use `useWindowDimensions()` from `react-native`.
-  - There is no `vw`/`vh`. Calculate from `Dimensions.get('window')`.
-* **Typography**: All text styles must be on `Text` components, never on `View`.
-  - `font-size` maps to `fontSize` (number, not string).
-  - `font-weight` maps to `fontWeight` (string: `'400'`, `'700'`, `'bold'`).
-  - `line-height` maps to `lineHeight` (number).
-  - `letter-spacing` maps to `letterSpacing`.
-  - `text-transform` maps to `textTransform`.
-  - `color` applies to `Text` only.
-* **Borders and shadows**:
-  - `border-radius` maps to `borderRadius`.
-  - `box-shadow` does not exist. Use `elevation` (Android) and `shadowColor`/`shadowOffset`/`shadowOpacity`/`shadowRadius` (iOS). Use `Platform.select()` to apply platform-specific shadow styles.
-* **Unsupported CSS properties**: Do not use `hover`, `transition`, `animation` (use `react-native-reanimated` for animations), or `position: fixed` (use absolute positioning instead).
+- 无 DOM 元素/浏览器事件且所有文本位于 Text。
+- theme token 来自当前源，Image 有尺寸。
+- 检查 iOS/Android 的 safe-area、导航和键盘状态。
 
-### Architectural Rules
-* **Modular components (Atomic Design)**: Break the design into independent files. Organize components as atoms (buttons, labels, icons), molecules (input groups, cards), and organisms (headers, lists, forms). Place them in `src/components/atoms/`, `src/components/molecules/`, and `src/components/organisms/`. Monolithic page/screen files are PROHIBITED.
-* **Logic isolation**: Move event handlers, API calls, and business logic into custom hooks in `src/hooks/`. Components should only handle rendering.
-* **Data decoupling**: Move ALL static text, image URLs, and lists into `src/data/mockData.ts`. No hardcoded content in components.
-* **Type safety**: EVERY component file (including screens) MUST export a TypeScript interface named `[ComponentName]Props` with `readonly` property modifiers. The validator requires the interface to be **exported** — files without an exported Props interface will FAIL validation.
-* **No hardcoded styles**: Extract colors, spacing, and font sizes into `src/theme.ts`. Reference them in `StyleSheet.create()`. Absolutely no raw color hex codes or rgba strings are allowed in component files.
-* **Navigation**: Use React Navigation for screen transitions. Define screen types with `NativeStackScreenProps` or `BottomTabScreenProps`.
-* **Accessibility**: Every interactive element must have `accessibilityLabel` and `accessibilityRole`. Images need `accessibilityLabel`. Use `accessibilityState` for toggles and checkboxes.
-* **Safe areas**: Wrap top-level screen components with `SafeAreaView` from `react-native-safe-area-context` (not the default one from `react-native`).
-* **Project specific**: Focus on the target project's needs and constraints. Leave Google license headers out of the generated components.
+可定制：目标 iOS/Android、工程路径、既有导航、主题和刷新范围。增值检查：Web→Native 映射；长列表选择；平台差异与可访问性检查。
 
-### Platform-specific code
-When the design requires different behavior on iOS and Android:
-```typescript
-import { Platform } from 'react-native';
+## FAQ
 
-const styles = StyleSheet.create({
-  shadow: Platform.select({
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    android: {
-      elevation: 4,
-    },
-  }),
-});
-```
+**Q1：交付的主要结果是什么？** 输入 <button>确认预约</button> → <Pressable accessibilityRole="button" accessibilityLabel="确认预约"><Text>确认预约</Text></Pressable>；事件由目标 onPress 契约提供。
 
-### Anti-patterns for Phase 3
-- ❌ Putting all UI in a single monolithic screen file.
-- ❌ Using HTML tags (like `div`, `span`, `p`) instead of React Native components.
-- ❌ Inline event handlers or business logic without custom hooks.
-- ❌ Hardcoding text, URLs, or colors in component files.
-- ❌ Components without an **exported** `[Name]Props` interface.
-- ❌ Using raw hex color values or rgba strings in `StyleSheet.create()`.
+**Q2：什么时候应换用其他入口？** React/Vite 浏览器 UI → stitch-react-components；Jetpack Compose 或 SwiftUI 实现 → 对应平台开发流程，交付设计映射；真实支付、登录或推送集成 → 项目业务接口流程，保留 UI 状态契约。
 
-## Phase 4: Execution steps
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：目标 RN 工程与实际依赖版本；所选 Stitch 屏幕或获准复用的 HTML/截图；平台、导航及 token 约束”。依赖这些输入的写操作不执行。
 
-> **GATE: Phase 4 verification, audits, and simulator/packager testing are optional. You MUST ask the user's permission to proceed with validation scripts, starting packagers, or simulator audits.**
+**Q4：怎样判断完成？** 无 DOM 元素/浏览器事件且所有文本位于 Text；theme token 来自当前源，Image 有尺寸；检查 iOS/Android 的 safe-area、导航和键盘状态。
 
-1. **Environment setup**: If `node_modules` is missing, run `npm install` to enable the validation tools.
-2. **Theme layer**: Create `src/theme.ts` from the extracted Tailwind config.
-3. **Data layer**: Create `src/data/mockData.ts` based on the design content.
-4. **Component drafting**: Use `resources/component-template.tsx` as a base. Find and replace ALL instances of `StitchComponent` with the actual component name. Map HTML elements to React Native primitives.
-5. **Navigation wiring**: If the design has multiple screens, set up a `NavigationContainer` with a stack or tab navigator in `App.tsx`.
-6. **Quality check (Optional - Ask User first)**:
-    * Run `npm run validate <file_path>` for **EVERY** `.tsx` file in components and screens to report component validity.
-    * Run `tsc --noEmit` to verify TypeScript compile status.
-    * Check output against `resources/architecture-checklist.md`.
-    * Obtain permission before starting the packager (`npx react-native start` or `npx expo start`) or starting visual simulator audits to verify the app renders correctly on a simulator/device.
+**Q5：怎样定制？** 目标 iOS/Android、工程路径、既有导航、主题和刷新范围；未提供时沿用现有项目值并标明假设。
 
-### Anti-patterns for Phase 4
-- ❌ Launching packagers or simulators without user consent.
-- ❌ Declaring task "done" without verifying code compiles.
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-## Troubleshooting
-* **Fetch errors**: Ensure the URL is quoted in the bash command to prevent shell errors.
-* **Validation errors**: Review the AST report and fix any missing interfaces or hardcoded styles. The most common failures are missing an **exported** `Props` interface or leaving raw hex colors in `StyleSheet.create()`.
-* **Text outside Text component**: React Native crashes if raw strings appear outside `<Text>`. Verify all text nodes are wrapped.
-* **Image sizing**: Unlike web `<img>`, React Native `Image` has no intrinsic size. Always specify `width` and `height` in styles or use `aspectRatio`.
-* **FlatList vs ScrollView**: If you see a "VirtualizedList inside ScrollView" warning, replace the outer `ScrollView` with a plain `View` or use `FlatList` `ListHeaderComponent`/`ListFooterComponent`.
+## 按需参考
+
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

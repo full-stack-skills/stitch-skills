@@ -1,6 +1,8 @@
 # Design System: Taste Standard
 **Skill:** stitch-taste-design
 
+This is an optional style proposal, not a replacement for an approved brand. Confirm the chosen palette and typefaces against the user's supplied constraints. Include a Chinese system-font fallback where needed. All example values below are design suggestions, not observed product data.
+
 ---
 
 ## Configuration — Set Your Style
@@ -74,11 +76,11 @@ The Hero is the first impression — it must be striking, creative, and never ge
 - **Feature Sections:** The "3 equal cards in a row" pattern is BANNED. Use 2-column Zig-Zag, asymmetric Bento grids (2fr 1fr 1fr), or horizontal scroll galleries
 - **Containment:** All content within `max-width: 1400px`, centered. Generous horizontal padding (`1rem` mobile, `2rem` tablet, `4rem` desktop)
 - **Full-Height:** Use `min-height: 100dvh` — never `height: 100vh` (iOS Safari address bar jump)
-- **Bento Architecture:** For feature grids, use Row 1: 3 columns | Row 2: 2 columns (70/30 split). Each tile contains a perpetual micro-animation
+- **Bento Architecture:** For feature grids, consider Row 1: 3 columns | Row 2: 2 columns (70/30 split). Use finite feedback only where it explains an interaction.
 
 ## 7. Responsive Rules
 Every screen must work flawlessly across all viewports. **Responsive is not optional — it is a hard requirement. Every single element must be tested at 375px, 768px, and 1440px.**
-- **Mobile-First Collapse (< 768px):** All multi-column layouts collapse to a strict single column. `width: 100%`, `padding: 1rem`, `gap: 1.5rem`. No exceptions
+- **Mobile-First Collapse (< 768px):** Collapse ordinary content to a readable column. Dense tables may use a deliberately designed scroll region; validate the actual content instead of forcing a universal layout.
 - **No Horizontal Scroll:** Horizontal overflow on mobile is a critical failure. All elements must fit within viewport width. If any element causes horizontal scroll, the design is broken
 - **Typography Scaling:** Headlines scale down gracefully via `clamp()`. Body text stays `1rem` minimum. Never shrink body below `14px`. Headlines must remain readable on 375px screens
 - **Touch Targets:** All interactive elements minimum `44px` tap target. Generous spacing between clickable items. Buttons must be full-width on mobile
@@ -92,11 +94,11 @@ Every screen must work flawlessly across all viewports. **Responsive is not opti
 > **Note:** Stitch generates static screens — it does not animate. This section documents the **intended motion behavior** so that the coding agent (Antigravity, Cursor, etc.) knows exactly how to implement animations when building the exported design into a live product.
 
 - **Physics Engine:** Spring-based exclusively. `stiffness: 100, damping: 20`. No linear easing anywhere. Premium, weighty feel on all interactive elements
-- **Perpetual Micro-Loops:** Every active dashboard component has an infinite-loop state — Pulse on status dots, Typewriter on search bars, Float on feature icons, Shimmer on loading states
+- **Motion accessibility:** Prefer finite, purposeful feedback. Under `prefers-reduced-motion: reduce`, disable nonessential displacement, stagger and shimmer; preserve immediate state changes and static loading indicators.
 - **Staggered Orchestration:** Lists and grids mount with cascaded delays (`animation-delay: calc(var(--index) * 100ms)`). Waterfall reveals, never instant mount
 - **Layout Transitions:** Smooth re-ordering via shared element IDs. Items swap positions with physics, simulating real-time intelligence
 - **Hardware Rules:** Animate ONLY `transform` and `opacity`. Never `top`, `left`, `width`, `height`. Grain/noise filters on fixed, pointer-events-none pseudo-elements only
-- **Performance:** CPU-heavy perpetual animations isolated in microscopic leaf components. Never trigger parent re-renders. Target 60fps minimum
+- **Performance:** Isolate expensive animations and measure actual frame delivery on target hardware. A frame-rate target is not a verified performance claim.
 
 ## 9. Anti-Patterns (Banned)
 - No emojis — anywhere in UI, code, or alt text
@@ -112,7 +114,7 @@ Every screen must work flawlessly across all viewports. **Responsive is not opti
 - No centered Hero sections (at this variance level)
 - No filler UI text: "Scroll to explore", "Swipe down", "Discover more below", scroll arrows, bouncing chevrons — all BANNED
 - No generic names: "John Doe", "Sarah Chan", "Acme", "Nexus", "SmartFlow"
-- No fake round numbers: `99.99%`, `50%`, `1234567` — use organic data: `47.2%`, `+1 (312) 847-1928`
+- No invented statistics or personal contact details. When business data is absent, use a labelled demo state or an empty state, not plausible-looking random numbers.
 - No fabricated data or statistics — never generate metrics, performance numbers, uptime percentages, response times, or any data not explicitly provided by the user. "99.98% UPTIME SLA", "124ms AVG. RESPONSE", "18.5k DEPLOY CYCLES" are invented AI filler. Use `[metric]` placeholders if real data is unavailable
 - No fake system/metric sections — "SYSTEM PERFORMANCE METRICS", "KEY STATISTICS", "BY THE NUMBERS" dashboard cards filled with invented data are BANNED
 - No `LABEL // YEAR` formatting — "SYSTEM // 2024", "METRICS // 2025" is a lazy AI convention, not real design typography

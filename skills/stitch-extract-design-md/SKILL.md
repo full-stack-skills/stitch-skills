@@ -1,365 +1,77 @@
 ---
 name: stitch-extract-design-md
-description: >-
-  Extract a comprehensive design system (DESIGN.md) directly from frontend source
-  code — React, Vue, Svelte, Angular, plain HTML/CSS, or any web framework. Analyzes
-  component files, stylesheets, Tailwind configs, theme definitions, and design tokens
-  to produce a rich, Stitch-compatible design system document. Use this skill whenever
-  the user wants to reverse-engineer a design system from an existing codebase, audit
-  the visual language of a project, extract design tokens from source files, or
-  understand the styling patterns in a frontend repo — even if they just say "what
-  does this app look like?" or "pull out the design from this code."
-allowed-tools:
-  - "stitch*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+description: 从前端源码提取可追踪的 DESIGN.md；在应用无法构建、需要审计 React/Vue/Svelte/Angular/CSS 视觉 token 或向 Stitch 迁移设计语言时使用。只做截图语义总结用 stitch-design-md。
+license: Apache-2.0
 ---
 
-# Extract Design System from Frontend Code
+# 从源码提取设计系统
 
-Analyze frontend source code to extract a comprehensive design system document
-(DESIGN.md) that captures the project's visual language — colors, typography,
-spacing, component patterns, and layout principles — directly from the source
-files, without needing to build or render the application.
+## 快速开始
 
-## Why This Exists
+1. “从企业微信预约 Web 页的 CSS 提取主色与间距；先给本地可审阅结果。”
+2. “构建失败时读取 Angular 模板和主题；保留已有范围与来源。”
+3. “比较门店后台深浅主题差异并记录来源；标出缺少的输入和验证状态。”
 
-The `stitch-design-md` skill works from rendered HTML. But often you have a codebase
-and want to understand its design system before you can even run the app —
-maybe dependencies are missing, the build is broken, or you just want a quick
-audit. This skill reads the source files themselves: stylesheets, component
-files, theme configs, and Tailwind setups. It's faster and works anywhere.
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-## When to Use
+## 能力边界说明
 
-- User has a frontend codebase and wants to extract or document its design system
-- User wants to migrate a project's visual identity into Stitch
-- User asks to "audit the styling" or "understand the design language" of a repo
-- User wants to create a DESIGN.md from existing source code
-- The app can't be built/rendered but the source is available
-- User wants to unify or reconcile inconsistent styles across a codebase
+### ✅ 擅长处理
 
-## Prerequisites
+- 从企业微信预约 Web 页的 CSS 提取主色与间距。
+- 构建失败时读取 Angular 模板和主题。
+- 比较门店后台深浅主题差异并记录来源。
 
-- Access to the frontend project's source directory
-- No build or runtime dependencies needed — this skill reads source files only
+### ⚠️ 需要素材
 
----
+- 前端源码根目录。
+- 主题、CSS 或组件文件。
+- 目标主题及是否需要上传兼容 YAML。
 
-## Workflow
+### ❌ 不适用场景及交接
 
-### Phase 1: Project Discovery
+- 只看截图提炼语义 → stitch-design-md。
+- 创建全新视觉风格 → stitch-taste-design。
+- 远程创建或应用系统 → stitch-manage-design-system，交付 DESIGN.md 作为输入。
 
-Start by understanding what you're working with. This determines which
-extraction patterns to use.
+## 工作流程
 
-#### 1. Detect the Framework and Stack
+1. 读取 package.json 和目录，确定框架与 CSS 工具链。
+2. 按框架读取现有 references 中的提取指南；先主题后组件，记录具体文件与选择器。
+3. 提取颜色角色、字体、间距、圆角、组件状态和响应式条件，区分事实和建议。
+4. 写 .stitch/DESIGN.md：YAML name/colors 加六节语义文档；未知 Project ID 省略，使用 Source。
+5. 核对每个 token 的来源、覆盖关系和模式；未渲染时将氛围标记为推断。
 
-Scan the project root for telltale files:
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-| Signal File | Framework / Tool |
-|:---|:---|
-| `package.json` with `react` | React / Next.js |
-| `package.json` with `vue` | Vue / Nuxt |
-| `package.json` with `svelte` | Svelte / SvelteKit |
-| `package.json` with `@angular/core` | Angular |
-| `tailwind.config.js/ts` | Tailwind CSS |
-| `postcss.config.js` | PostCSS pipeline |
-| `styled-components` or `@emotion` in deps | CSS-in-JS |
-| `.css` / `.scss` / `.less` files only | Plain CSS / SASS |
-| `theme.js` / `theme.ts` / `tokens.js` | Design token files |
+## 安全与结果验证
 
-Read `package.json` first — it reveals the framework, CSS tooling, and any
-design-token libraries (e.g., `style-dictionary`, `@chakra-ui/react`,
-`@mui/material`, `ant-design`). This context tells you *where* to look for
-styling information.
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-#### 2. Map the Source Tree
+- 颜色值可回溯到源码且近似色未被静默合并。
+- name/colors YAML 可解析。
+- 断点和交互状态区分已观察与建议。
 
-Identify the key directories and files you'll analyze:
+可定制：主题模式、组件范围、语言和路径；例如只提取深色按钮/表单。增值检查：token 溯源表；近似色差异清单；框架按需路由。
 
-```
-src/
-├── components/     ← Component-level styles
-├── styles/         ← Global stylesheets
-├── theme/          ← Theme definitions, tokens
-├── assets/         ← Fonts, images
-├── app.css         ← Root styles
-└── index.css       ← Entry CSS
-```
+## FAQ
 
-Also check for:
-- `tailwind.config.js` / `tailwind.config.ts` — Custom colors, fonts, spacing
-- `globals.css` / `global.css` — CSS custom properties (variables)
-- Any `theme.*` or `tokens.*` files
-- Component library config (e.g., `chakra-theme.ts`, `vuetify.config.ts`)
+**Q1：交付的主要结果是什么？** name: 门店预约；colors.primary: '#2563eb'（演示输入）；Source: src/theme.css 的 --brand-primary；氛围为源码推断，尚未渲染。
 
-#### 3. Read Framework-Specific Guidance
+**Q2：什么时候应换用其他入口？** 只看截图提炼语义 → stitch-design-md；创建全新视觉风格 → stitch-taste-design；远程创建或应用系统 → stitch-manage-design-system，交付 DESIGN.md 作为输入。
 
-Consult the appropriate reference for extraction patterns:
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：前端源码根目录；主题、CSS 或组件文件；目标主题及是否需要上传兼容 YAML”。依赖这些输入的写操作不执行。
 
-- **React / Next.js / Tailwind** → [references/react-tailwind.md](references/react-tailwind.md)
-- **Vue / Nuxt** → [references/vue.md](references/vue.md)
-- **Svelte / SvelteKit** → [references/svelte.md](references/svelte.md)
-- **Angular** → [references/angular.md](references/angular.md)
-- **Plain CSS / SASS / Less** → [references/plain-css.md](references/plain-css.md)
+**Q4：怎样判断完成？** 颜色值可回溯到源码且近似色未被静默合并；name/colors YAML 可解析；断点和交互状态区分已观察与建议。
 
-These references contain framework-specific patterns for locating colors,
-typography, spacing, and component styles. Read the one that matches before
-proceeding.
+**Q5：怎样定制？** 主题模式、组件范围、语言和路径；例如只提取深色按钮/表单；未提供时沿用现有项目值并标明假设。
 
----
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-### Phase 2: Deep Extraction
+## 按需参考
 
-Work through each design dimension systematically. For each one, gather raw
-data from the source files, then synthesize it into descriptive language.
-
-The goal isn't to dump every CSS property — it's to understand the *intent*
-behind the styling choices and describe them in human, editorial language that
-another designer (or Stitch) can use to recreate the same visual feel.
-
-#### 1. Visual Theme & Atmosphere
-
-Read the broadest styling first to understand the overall mood:
-
-- **Root background**: What's the `body` or root element background? Light
-  cream (#f-range) signals airy/clean; dark (#0-#2 range) signals moody/dramatic.
-- **Whitespace philosophy**: Are spacing values generous (32px+) or tight?
-  Check padding/margin values on root containers, section wrappers, and card components.
-- **Density**: Count the components per page/section. Few with space = minimal;
-  many packed tight = information-dense.
-- **Color temperature**: Are the neutrals warm (creams, tans) or cool (blue-grays, slates)?
-- **Overall feel**: Synthesize into 1-2 rich sentences that capture the mood.
-
-Look for these signals in the source:
-
-| Source Location | What It Tells You |
-|:---|:---|
-| Root `background-color` or Tailwind `bg-*` on layouts | Overall lightness/darkness |
-| Spacing scale in Tailwind config or CSS vars | Whitespace philosophy |
-| Number of components vs. wrapper padding | Density |
-| Custom property naming (`--warm-*` vs `--cool-*`) | Color temperature intent |
-| Comments in theme files | Design intent in the developer's own words |
-
-#### 2. Color Palette & Roles
-
-Extract every unique color from the codebase and assign functional roles.
-Search across all layers:
-
-**Where to find colors:**
-
-| Layer | What to Search |
-|:---|:---|
-| CSS custom properties | `--color-*`, `--primary`, `--bg-*` |
-| Tailwind config | `theme.extend.colors` |
-| Theme/token files | Color objects, palettes |
-| Component styles | `background-color`, `color`, `border-color` |
-| Inline/scoped styles | `bg-*`, `text-*` classes in templates |
-| CSS-in-JS theme objects | `colors`, `palette` keys |
-
-**How to organize:** Group colors by function, not by hue:
-
-1. **Primary Foundation** — Background and surface colors
-2. **Accent & Interactive** — CTA buttons, active states, links
-3. **Typography & Text Hierarchy** — Primary, secondary, tertiary text
-4. **Functional States** — Success, error, warning, info
-
-For each color, create a descriptive name that evokes the color's character
-rather than its raw hex value:
-
-- ❌ `#294056` → "Blue"
-- ✅ `#294056` → **"Deep Muted Teal-Navy"** — Primary CTA, active navigation
-
-**Deduplication matters.** Codebases often have near-duplicate colors (e.g.,
-`#333` and `#2C2C2C`). Consolidate them under one name that best represents
-the intended color.
-
-#### 3. Typography Rules
-
-Extract the complete typographic system:
-
-**Font families:**
-- Check CSS `font-family`, Tailwind `fontFamily`, Google Fonts links, or
-  local `@font-face` declarations.
-- Note the **character** of each font: geometric vs humanist, serif vs sans,
-  the feeling it evokes.
-
-**Type scale (hierarchy):**
-- Find every heading level (H1-H6) and body text, noting:
-  - `font-size` (in rem or px)
-  - `font-weight` (numeric value + descriptive name)
-  - `letter-spacing` (and why — elegance? compactness?)
-  - `line-height` (generous for readability? tight for display?)
-- Map component usage: Which heading level do product cards use? What about
-  hero sections?
-
-**Spacing principles:**
-- How does text spacing relate to the overall spacing scale?
-- Letter-spacing patterns on headings vs body
-- Line-height philosophy (generous/relaxed for body, tighter for display)
-
-#### 4. Component Stylings
-
-Analyze the 4-5 most important UI primitives:
-
-**Buttons:**
-- Corner radius (and what it communicates — playful? professional? minimal?)
-- Color scheme for primary, secondary, and ghost variants
-- Hover/focus/active states and transition timing
-- Padding ratios (horizontal vs vertical)
-
-**Cards / Containers:**
-- Corner radius (often different from buttons — slightly rounder)
-- Shadow strategy: flat, subtle hover shadows, or always elevated?
-- Border treatment: hairline borders, colored accents, or none?
-- Internal padding (generous or compact?)
-- Image treatment within cards (full-bleed, padded, rounded?)
-
-**Navigation:**
-- Layout pattern (horizontal bar, vertical sidebar, drawer)
-- Typography treatment (uppercase, letter-spacing, weight)
-- Active/hover state indicators (underline, color, background)
-- Mobile behavior (hamburger, bottom nav, drawer)
-
-**Inputs & Forms:**
-- Border style and focus state behavior
-- Corner style consistency with buttons
-- Padding and touch-target sizing
-
-**Domain-Specific Components:**
-- Identify 1-2 components unique to this project (e.g., product cards,
-  dashboard widgets, chat bubbles) and describe their styling patterns.
-
-#### 5. Layout Principles
-
-Extract the structural system:
-
-**Grid & Structure:**
-- Max content width (from `max-width` on containers)
-- Column system (CSS Grid, Flexbox patterns, defined breakpoints)
-- Responsive breakpoints (from media queries or Tailwind config)
-
-**Whitespace Strategy:**
-- Base spacing unit (8px grid? 4px? custom?)
-- Section margins (how much space between major sections)
-- Edge padding (page margins at different breakpoints)
-
-**Alignment & Visual Balance:**
-- Text alignment patterns (centered heroes, left-aligned body)
-- Image-to-text ratios
-- Visual weight distribution
-
-**Responsive Behavior:**
-- Mobile-first or desktop-first?
-- How do grids collapse? Padding scale?
-- Touch target sizing
-
-#### 6. Stitch Generation Notes
-
-Synthesize the extraction into actionable prompts for Stitch:
-
-- **Atmosphere language**: Translate the mood into natural descriptors
-- **Color references**: List colors by descriptive name + hex
-- **Component prompts**: Write 2-3 example prompts that would recreate
-  key components in Stitch
-- **Iteration guidance**: Tips for refining screens in this design system
-
----
-
-### Phase 3: Write the DESIGN.md
-
-Assemble everything into the standard DESIGN.md format. Place it at
-`.stitch/DESIGN.md` in the project directory (create the `.stitch/` directory
-if it doesn't exist).
-
-> [!IMPORTANT]
-> You **MUST** include the YAML frontmatter at the top of the file with `name` and `colors` mapping, exactly as shown in the example at [examples/DESIGN.md](examples/DESIGN.md). This structured data is required for other skills to parse the design system.
->
-> Failure to include this YAML block with at least the core color tokens is a failure to use this skill correctly.
-
-Use the format from the example at [examples/DESIGN.md](examples/DESIGN.md) as your template. The file must start with the YAML block, followed by the markdown sections:
-
-```markdown
-# Design System: [Project Name]
-**Project ID:** [If known, otherwise omit]
-
-## 1. Visual Theme & Atmosphere
-[Rich 2-paragraph description of mood, philosophy, and key characteristics]
-
-## 2. Color Palette & Roles
-### Primary Foundation
-### Accent & Interactive
-### Typography & Text Hierarchy
-### Functional States
-
-## 3. Typography Rules
-### Hierarchy & Weights
-### Spacing Principles
-
-## 4. Component Stylings
-### Buttons
-### Cards & [Domain-Specific Containers]
-### Navigation
-### Inputs & Forms
-### [Domain-Specific Components]
-
-## 5. Layout Principles
-### Grid & Structure
-### Whitespace Strategy
-### Alignment & Visual Balance
-### Responsive Behavior & Touch
-
-## 6. Design System Notes for Stitch Generation
-### Language to Use
-### Color References
-### Component Prompts
-### Incremental Iteration
-```
-
----
-
-### Phase 4: Integration (Optional)
-
-If the user wants to push the design system into Stitch:
-
-1. Hand off to the `stitch-manage-design-system` skill for the MCP create/update calls
-2. The DESIGN.md you wrote is the input — the stitch-manage-design-system skill handles
-   the Stitch API integration
-
-If the user just wants the document, you're done after Phase 3.
-
----
-
-## Quality Checklist
-
-Before delivering the DESIGN.md, verify:
-
-- [ ] Every color has a descriptive name, hex code, and functional role
-- [ ] Typography includes font family, character description, and full hierarchy
-- [ ] Component styles describe shape, color, states, and transitions
-- [ ] Layout includes max-width, grid, breakpoints, and spacing strategy
-- [ ] Stitch generation notes use natural language, not CSS syntax
-- [ ] The atmosphere section reads like editorial copy, not technical docs
-- [ ] Near-duplicate colors are consolidated
-- [ ] The document captures the *intent* behind styling, not just raw values
-
-## Tips for Better Extraction
-
-- **Read comments and commit messages.** Developers often document design
-  intent in code comments (`/* hero section — breathable */`) and commit
-  messages. These are gold for understanding the *why*.
-- **Check for design-token libraries.** If the project uses `style-dictionary`,
-  `@tokens-studio`, or similar, these files are the most authoritative
-  source of design values.
-- **Theme files are higher-signal than component styles.** A `theme.ts` that
-  defines a palette tells you the intended design system; scattered inline
-  styles in components tell you what actually shipped. Both matter, but
-  start from the theme.
-- **Tailwind config is a design system.** If a project has a customized
-  `tailwind.config.js`, that *is* the design system — extract from it first,
-  then spot-check components for overrides.
-- **CSS custom properties are intentional.** If a developer defined
-  `--brand-primary`, they're telling you this is a design token. Respect that.
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

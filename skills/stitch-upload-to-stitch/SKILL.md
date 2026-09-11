@@ -1,101 +1,77 @@
 ---
 name: stitch-upload-to-stitch
-description: >-
-  Upload local assets (images, mockups, extracted HTML, design markdown) to a Stitch project.
-  ALWAYS use this skill when you need to upload visual assets, HTML pages, or design docs
-  to Stitch, particularly when direct MCP tool calls fail or truncate due to
-  base64 token limits.
-allowed-tools:
-  - "stitch*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+description: 将已授权的本地图片、HTML 或 DESIGN.md 上传到指定 Stitch 项目；文件较大或直接 MCP 的 base64 参数不适合传输时使用。只生成本地文件、检索项目或部署网站时不触发。
+license: Apache-2.0
 ---
 
-# Upload-to-Stitch
+# 上传本地资产到 Stitch
 
-Upload local assets (images, mockups, HTML, and markdown files) to a Stitch project using the
-provided upload script, which bypasses the MCP tool's base64 output token limits.
+## 快速开始
 
-> [!NOTE]
-> The AI model cannot upload files via MCP tools directly because the base64
-> encoding of even a small file exceeds the model's output token limit (~16K
-> tokens). This script reads the file and sends it directly over HTTP.
+1. “上传脱敏的门店预约页 HTML；先给本地可审阅结果。”
+2. “上传品牌 DESIGN.md 供系统创建；保留已有范围与来源。”
+3. “上传用户提供的演示稿 PNG；标出缺少的输入和验证状态。”
 
-## Steps
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-### 1. Identify Target Project
+## 能力边界说明
 
-Use `list_projects` to find the correct `projectId`.
+### ✅ 擅长处理
 
-### 2. Get the API Key
+- 上传脱敏的门店预约页 HTML。
+- 上传品牌 DESIGN.md 供系统创建。
+- 上传用户提供的演示稿 PNG。
 
-Locate your active MCP server configuration file and extract the API key:
-- **Antigravity**: `.gemini/antigravity/mcp_config.json` or `.gemini/jetski/mcp_config.json`
-- **Gemini CLI**: `~/.gemini/settings.json` or `~/.gemini/extensions/Stitch/gemini-extension.json`
-- **Claude Code**: `~/.claude.json`
+### ⚠️ 需要素材
 
-Extract:
-- **API Key**: From the `X-Goog-Api-Key` header or auth argument
-- **MCP URL** (optional): From the `httpUrl` or endpoint argument (defaults to
-  `https://stitch.googleapis.com`)
+- 真实 projectId。
+- 支持格式的已审核本地文件。
+- 通过运行环境注入的 STITCH_API_KEY 与上传授权。
 
-> [!IMPORTANT]
-> If you cannot find the API key in any of these locations, or if you cannot access these files, you MUST ask the user to provide the Stitch API key. Do not proceed without a valid API key.
+### ❌ 不适用场景及交接
 
-### 3. Run Upload Script
+- 远程套用设计系统 → stitch-manage-design-system。
+- 从代码生成上传文件 → stitch-code-to-design。
+- 公开部署网站 → 目标部署流程，交付 HTML 资产包。
 
-> [!WARNING]
-> **Checkpoint — User Confirmation Required.**
-> Before running the upload script, you **MUST** pause and present the file(s)
-> to be uploaded (paths, sizes, and types) to the user and wait for explicit
-> approval. Do **NOT** execute the upload script until the user confirms.
+## 工作流程
 
-Use `run_command` to execute the Python script:
+1. 核对文件路径、大小、类型和目标项目，确保授权覆盖这些内容。
+2. 从 STITCH_API_KEY 环境变量取凭据；不搜索其他客户端配置，不让用户把密钥粘到会话。
+3. 执行脚本前用 --help 核对参数；HTML title 使用路由，generated-by 使用实际生产者。
+4. 脚本通过 HTTPS 单次发送；禁止自动跟随重定向及重复写入，响应只输出下游所需标识。
+5. 读取 get_project、list_screens、get_screen 确认上传结果；超时或空响应保留输入和未知状态，先对账再决定新操作。
 
-```bash
-python3 <SKILL_DIR>/scripts/upload_to_stitch.py \
-  --project-id <PROJECT_ID> \
-  --file-path <PATH_TO_FILE> \
-  --api-key <API_KEY> \
-  [--api-url <STITCH_API_URL>] \
-  [--title <SCREEN_TITLE>] \
-  [--generated-by <GENERATED_BY>]
-```
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-> [!TIP]
-> **macOS / SSL Certificate Troubleshooting:**
-> If the upload fails with `ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] unable to get local issuer certificate`, this means your Python installation does not have root certificate authorities configured.
->
-> The script automatically attempts to use the `certifi` package to load the CA bundle if it is installed in your python environment. If `certifi` is not installed, you can either install it (`pip install certifi`) or manually supply the `SSL_CERT_FILE` environment variable when running the script:
-> ```bash
-> SSL_CERT_FILE=$(python3 -c "import certifi; print(certifi.where())") python3 <SKILL_DIR>/scripts/upload_to_stitch.py \
->   --project-id <PROJECT_ID> \
->   --file-path <PATH_TO_FILE> \
->   --api-key <API_KEY> \
->   [--api-url <STITCH_API_URL>] \
->   [--title <SCREEN_TITLE>] \
->   [--generated-by <GENERATED_BY>]
-> ```
+## 安全与结果验证
 
-### Supported File Types
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-| Extension | MIME Type |
-|:---|:---|
-| `.png` | `image/png` |
-| `.jpg`, `.jpeg` | `image/jpeg` |
-| `.webp` | `image/webp` |
-| `.html`, `.htm` | `text/html` |
-| `.md` | `text/markdown` |
+- argv/日志/报告不含密钥、base64 或完整响应。
+- PNG/HTML/Markdown 分别映射 screenshot/htmlCode。
+- 返回的 screen/instance 标识可用于后续流程。
 
-The script auto-detects MIME type from the file extension.
+可定制：title、generated-by、文件路径、经确认的 HTTPS 服务根地址。增值检查：环境凭据；小输出 ID 交接；无自动重试和重定向。
 
-### Script Options
+## FAQ
 
-- `--project-id`: **Required**. The Stitch project ID.
-- `--file-path`: **Required**. Path to the local file to upload.
-- `--api-key`: **Required**. API key for Stitch authorization.
-- `--api-url`: Optional. Base URL of the Stitch API. Defaults to `https://stitch.googleapis.com`.
-- `--title`: Optional. Title for the uploaded screen. When uploading extracted HTML from a web app, set this to the **route path** of the page (e.g., `'/dashboard'`, `'/settings/profile'`, `'/inbox'`) so that the screen name/title in Stitch clearly identifies the route.
-- `--generated-by`: Optional. Specify how the uploaded file was generated (e.g., 'stitch-extract-static-html' skill, 'Claude Code', 'Codex', 'Gemini' etc.).
+**Q1：交付的主要结果是什么？** 离线 Markdown 输入 eA== → {screen:{htmlCode:{fileContentBase64:'eA==',mimeType:'text/markdown'},screenType:'DOCUMENT',isCreatedByClient:true,generatedBy:'UserUploadedDesignMd'}}。
+
+**Q2：什么时候应换用其他入口？** 远程套用设计系统 → stitch-manage-design-system；从代码生成上传文件 → stitch-code-to-design；公开部署网站 → 目标部署流程，交付 HTML 资产包。
+
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：真实 projectId；支持格式的已审核本地文件；通过运行环境注入的 STITCH_API_KEY 与上传授权”。依赖这些输入的写操作不执行。
+
+**Q4：怎样判断完成？** argv/日志/报告不含密钥、base64 或完整响应；PNG/HTML/Markdown 分别映射 screenshot/htmlCode；返回的 screen/instance 标识可用于后续流程。
+
+**Q5：怎样定制？** title、generated-by、文件路径、经确认的 HTTPS 服务根地址；未提供时沿用现有项目值并标明假设。
+
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
+
+## 按需参考
+
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

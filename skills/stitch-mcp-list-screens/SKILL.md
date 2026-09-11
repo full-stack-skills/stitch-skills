@@ -1,10 +1,7 @@
 ---
 name: stitch-mcp-list-screens
 description: Lists all screens contained within a specific project.
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
+allowed-tools: stitch*:* Read Write
 ---
 
 

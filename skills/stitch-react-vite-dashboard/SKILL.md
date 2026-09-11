@@ -1,87 +1,77 @@
 ---
 name: stitch-react-vite-dashboard
-description: Convert Stitch designs into production React + Vite dashboards with TanStack Query, accessible tokens from DESIGN.md, and Web3-ready patterns (ethers/viem).
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
-  - "Bash"
-  - "web_fetch"
+description: 把 Stitch 设计实现为 React/Vite 数据看板；当需 TanStack Query、表格、筛选、异步状态和设计 token 一致性时触发。只有普通展示组件用 stitch-react-components；链上读数仅在明确请求时加入。
+license: Apache-2.0
 ---
 
-# Stitch to React + Vite Dashboard
+# Stitch 数据看板实现
 
-You are a frontend engineer building **data-dense dashboards** from Stitch screens. Target stack: **React 18**, **Vite**, **TypeScript**, **TanStack Query**, **React Router**, and optional **ethers v6** or **viem** for on-chain reads.
+## 快速开始
 
-## Prerequisites
+1. “将门店运营稿实现为预约量看板；先给本地可审阅结果。”
+2. “为订单表格增加查询和空/错/加载状态；保留已有范围与来源。”
+3. “明确需求下展示链上只读数据；标出缺少的输入和验证状态。”
 
-- Stitch MCP configured ([setup guide](https://stitch.withgoogle.com/docs/mcp/setup/))
-- A project `DESIGN.md` (see the `stitch-design-md` skill) for token fidelity
-- Vite + React + TypeScript scaffold (`npm create vite@latest`)
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-## Workflow
+## 能力边界说明
 
-1. **Discover MCP prefix** — run `list_tools`, note the Stitch prefix (e.g. `stitch:`).
-2. **Fetch screen** — `[prefix]:get_screen` with project and screen IDs.
-3. **Download assets** — persist HTML/screenshot under `.stitch/designs/{screen}.html` and `.png`.
-4. **Read DESIGN.md** — map `colors.*`, `typography.*`, `spacing.*` to CSS variables in `src/index.css`.
-5. **Generate components** — split into `src/components/`, `src/pages/`, `src/hooks/`.
-6. **Wire data** — use TanStack Query for async fetches; keep presentational components pure.
+### ✅ 擅长处理
 
-## HTML → React mapping
+- 将门店运营稿实现为预约量看板。
+- 为订单表格增加查询和空/错/加载状态。
+- 明确需求下展示链上只读数据。
 
-| Pattern | Implementation |
-|---------|----------------|
-| Layout grid / flex | Tailwind utilities or CSS modules aligned to DESIGN.md spacing tokens |
-| Cards / panels | `<section>` with tokenized border-radius and elevation fallbacks for forced-colors |
-| Tables | Semantic `<table>` or TanStack Table; never div-only grids for tabular data |
-| Buttons | `<button type="button">` with visible focus ring (preserve browser default unless DESIGN.md defines focus tokens) |
-| Forms | `<label htmlFor>` + `<input id>`; associate errors with `aria-describedby` |
-| Loading | Skeleton components; `aria-busy` on containers during fetch |
-| Wallet connect | Isolate in `WalletProvider`; never embed private keys in generated code |
+### ⚠️ 需要素材
 
-## DESIGN.md integration
+- 目标 React/Vite 工程和锁定版本。
+- Stitch HTML/截图及 DESIGN.md。
+- 接口契约、分页规则和演示数据。
 
-```css
-/* src/index.css — example token bridge */
-:root {
-  --color-primary: /* from DESIGN.md colors.primary */;
-  --font-body: /* typography.body-md.fontFamily */;
-}
-```
+### ❌ 不适用场景及交接
 
-Run the design.md linter locally before shipping UI:
+- 普通单个卡片转换 → stitch-react-components。
+- shadcn 原语迁移 → stitch-shadcn-ui。
+- 签名交易或财务建议 → 交给明确授权的业务流程，先交付只读数据需求。
 
-```bash
-npx @google/design.md lint DESIGN.md
-```
+## 工作流程
 
-## Web3 dashboard conventions
+1. 读取实际工程版本和屏幕资产，不默认升级 React/Vite。
+2. 把 DESIGN.md 颜色、字体、间距映射到项目 CSS 变量，记录来源。
+3. 拆分页面/展示组件/hooks，保留语义 table、label、焦点和路由。
+4. 按接口契约设置 queryKey、查询函数、分页和加载/空/错误/重试状态；无接口用明确标记的演示适配器。
+5. 运行项目 type/lint/build 与交互验证；使用本地 token 一致性检查，未经验证的外部 linter 不作为门禁。
 
-- Read-only contract calls via `useReadContract` (viem/wagmi) or ethers `Contract` + TanStack Query `queryFn`.
-- Format token amounts with `formatUnits`; show network name and chain ID in settings footer.
-- Surface transaction errors in plain language; link to block explorer when `txHash` exists.
-- Gas-sensitive flows: batch reads, avoid redundant `eth_call` in render loops.
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-## File structure
+## 安全与结果验证
 
-```
-src/
-├── components/     # Presentational UI from Stitch
-├── pages/          # Route-level screens
-├── hooks/          # useQuery wrappers, wallet hooks
-├── lib/            # ABI helpers, formatters
-└── styles/         # Token CSS variables
-```
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-## Quality checklist
+- 筛选/分页改变 queryKey，未以 mock 冒充后台。
+- 语义表格与键盘焦点可用。
+- VITE_* 仅包含公开配置。
 
-- [ ] WCAG 2.2 AA: contrast from DESIGN.md component pairs passes linter
-- [ ] Keyboard navigable: focus order matches visual order
-- [ ] Responsive: test at 375px and 1280px widths
-- [ ] No secrets in repo: RPC URLs from env (`VITE_*` prefix only for public endpoints)
-- [ ] TypeScript strict: no `any` on contract ABIs
+可定制：接口适配器、queryKey、分页策略、断点、币种/单位。增值检查：异步状态矩阵；数据来源标注；公开配置边界。
 
-## Stitch docs note
+## FAQ
 
-When following links on [stitch.withgoogle.com/docs](https://stitch.withgoogle.com/docs/), use the full `https://stitch.withgoogle.com/docs/...` URL if relative navigation redirects incorrectly.
+**Q1：交付的主要结果是什么？** 预约筛选=待确认，接口演示返回 [] → 表格标题与筛选保留，显示“暂无预约”，不展示编造统计。
+
+**Q2：什么时候应换用其他入口？** 普通单个卡片转换 → stitch-react-components；shadcn 原语迁移 → stitch-shadcn-ui；签名交易或财务建议 → 交给明确授权的业务流程，先交付只读数据需求。
+
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：目标 React/Vite 工程和锁定版本；Stitch HTML/截图及 DESIGN.md；接口契约、分页规则和演示数据”。依赖这些输入的写操作不执行。
+
+**Q4：怎样判断完成？** 筛选/分页改变 queryKey，未以 mock 冒充后台；语义表格与键盘焦点可用；VITE_* 仅包含公开配置。
+
+**Q5：怎样定制？** 接口适配器、queryKey、分页策略、断点、币种/单位；未提供时沿用现有项目值并标明假设。
+
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
+
+## 按需参考
+
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。
