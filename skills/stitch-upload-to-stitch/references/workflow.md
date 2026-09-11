@@ -40,7 +40,7 @@ python3 <SKILL_DIR>/scripts/upload_to_stitch.py \
 
 ### Recovery and output
 
-The CLI emits only returned screen names and instance id/sourceScreen fields. It never logs the response body or key. On timeouts, malformed responses or HTTP errors, reconcile via get_project/list_screens/get_screen before deciding a new write.
+The CLI emits only validated screen names and instance id/sourceScreen fields. The response must be an object with a nonempty screens array; screenInstances must be an array and nonempty when the CLI requested instances. Every identifier must be a string in the local accepted syntax, screen resource paths must belong to the requested project, and instance sourceScreen must reference a returned screen. Object-valued fields, unexpected shapes, duplicates and empty results are unknown outcomes, not success. Extra response fields are discarded. The local identifier syntax is conservative (32-character hexadecimal IDs as illustrated by the pinned design-system tool-schema examples); an unrecognized future format requires reconciliation, not printing raw values. The CLI never logs the response body or key. On timeouts, malformed responses or HTTP errors, reconcile via get_project/list_screens/get_screen before deciding a new write.
 
 ### Supported File Types
 

@@ -35,6 +35,7 @@ import base64
 import json
 import os
 import pathlib
+import re
 import sys
 from typing import Any
 import urllib.request
@@ -81,6 +82,47 @@ def encode_file(path: pathlib.Path) -> str:
     return base64.b64encode(f.read()).decode("utf-8")
 
 
+def validated_result_summary(result: Any, project_id: str, require_instances: bool) -> dict[str, Any]:
+  """Accept only identifiers in the requested project; reject ambiguous results.
+
+  This is a conservative local acceptance contract, not a claim that every
+  future server identifier shape is known. Unrecognized shapes require reads
+  to reconcile the upload instead of reporting success or logging raw values.
+  """
+  unknown = "上传结果未知：响应标识缺失或结构异常，请先对账，勿重复提交。"
+  if not isinstance(result, dict):
+    raise ValueError(unknown)
+  screens = result.get("screens")
+  instances = result.get("screenInstances", [])
+  if (not isinstance(screens, list) or not screens
+      or not isinstance(instances, list) or (require_instances and not instances)):
+    raise ValueError(unknown)
+  # Current pinned tool-schema examples use 32-character hexadecimal IDs.
+  # A different server format is an unknown outcome, never a reason to print it.
+  resource_pattern = re.compile(r"projects/" + re.escape(project_id) + r"/screens/[A-Fa-f0-9]{32}")
+  id_pattern = re.compile(r"[A-Fa-f0-9]{32}")
+  screen_names = set()
+  safe_screens = []
+  for screen in screens:
+    name = screen.get("name") if isinstance(screen, dict) else None
+    if not isinstance(name, str) or not resource_pattern.fullmatch(name) or name in screen_names:
+      raise ValueError(unknown)
+    screen_names.add(name)
+    safe_screens.append({"name": name})
+  safe_instances = []
+  instance_ids = set()
+  for instance in instances:
+    if not isinstance(instance, dict):
+      raise ValueError(unknown)
+    instance_id, source = instance.get("id"), instance.get("sourceScreen")
+    if (not isinstance(instance_id, str) or not id_pattern.fullmatch(instance_id)
+        or instance_id in instance_ids or not isinstance(source, str) or source not in screen_names):
+      raise ValueError(unknown)
+    instance_ids.add(instance_id)
+    safe_instances.append({"id": instance_id, "sourceScreen": source})
+  return {"screens": safe_screens, "screenInstances": safe_instances}
+
+
 def call_batch_create_screens(
     api_url: str,
     api_key: str,
@@ -102,7 +144,8 @@ def call_batch_create_screens(
     urlopen: The urlopen function to use (for testing).
 
   Returns:
-    Parsed JSON response dict.
+    Validated identifier-only summary. Unexpected shapes fail closed without
+    logging response data; no automatic retry occurs.
   """
   endpoint = urllib.parse.urlsplit(api_url)
   if (endpoint.scheme != "https" or not endpoint.hostname or endpoint.username
@@ -136,8 +179,12 @@ def call_batch_create_screens(
     with urlopen(req, **urlopen_kwargs) as resp:
       body = resp.read().decode("utf-8")
       if not body:
-        raise ValueError("上传响应为空；先读取项目状态，勿重复提交。")
-      return json.loads(body)
+        raise ValueError("上传结果未知：响应为空，请先对账，勿重复提交。")
+      try:
+        result = json.loads(body)
+      except json.JSONDecodeError:
+        raise ValueError("上传结果未知：响应不是有效 JSON，请先对账，勿重复提交。") from None
+      return validated_result_summary(result, project_id, create_screen_instances)
   except urllib.error.HTTPError as e:
     raise ValueError(f"上传返回 HTTP {e.code}；请检查授权并读取项目状态，勿重复提交。") from None
 
@@ -278,16 +325,13 @@ def main():
       create_screen_instances=True,
   )
 
-  # Report only the identifiers required by downstream design-system calls.
-  summary = {"screens": [{"name": s.get("name")} for s in result.get("screens", [])],
-             "screenInstances": [{"id": s.get("id"), "sourceScreen": s.get("sourceScreen")}
-                                 for s in result.get("screenInstances", [])]}
-  print(json.dumps(summary, indent=2))
+  # The transport boundary has validated structure, types and identifier syntax.
+  print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
   try:
     main()
   except (OSError, ValueError, urllib.error.URLError):
-    print("上传未确认完成：请检查输入文件、HTTPS/CA 与授权，再读取项目状态；不要直接重试。", file=sys.stderr)
+    print("上传结果未知或尚未开始：请检查输入文件、HTTPS/CA 与授权；若已发送请求，先对账，不要直接重试。", file=sys.stderr)
     sys.exit(1)

@@ -56,7 +56,7 @@ license: Apache-2.0
 
 ## FAQ
 
-**Q1：交付的主要结果是什么？** 离线 Markdown 输入 eA== → {screen:{htmlCode:{fileContentBase64:'eA==',mimeType:'text/markdown'},screenType:'DOCUMENT',isCreatedByClient:true,generatedBy:'UserUploadedDesignMd'}}。
+**Q1：交付的主要结果是什么？** 本地 HTML 请求使用 htmlCode、text/html 和 DOCUMENT；远程执行后只交付经过类型、格式与项目归属校验的 screen/instance 标识。完整离线输入、请求和模拟回执见本地应用示例；请求构造不代表上传成功。
 
 **Q2：什么时候应换用其他入口？** 远程套用设计系统 → stitch-manage-design-system；从代码生成上传文件 → stitch-code-to-design；公开部署网站 → 目标部署流程，交付 HTML 资产包。
 
