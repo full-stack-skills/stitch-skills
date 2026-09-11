@@ -586,7 +586,8 @@ function jsxToHtml(jsxSource: string): string | null {
   try {
     ast = parser.parse(jsxSource, {
       sourceType: 'module',
-      plugins: ['jsx', 'typescript', 'optionalChaining', 'nullishCoalescingOperator'],
+      // Standard optional chaining and nullish coalescing no longer need plugins.
+      plugins: ['jsx', 'typescript'],
     });
   } catch (e: unknown) {
     console.error(`  Babel parse error: ${(e as Error).message}`);
