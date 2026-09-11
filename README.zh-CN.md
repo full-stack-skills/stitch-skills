@@ -138,3 +138,6 @@ cp -r stitch-skills/skills/* .claude/skills/
 ## 📄 许可证
 
 Apache 2.0 — 详见 [LICENSE](LICENSE)。
+
+来源归属见 [NOTICE](NOTICE)。原有第三方通知及许可正文完整保留于
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，相关组件仍遵循各自许可。

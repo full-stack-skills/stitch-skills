@@ -138,3 +138,7 @@ For more details, see the [Claude Code Skills Guide](https://code.claude.com/doc
 ## 📄 License
 
 Apache 2.0 — see [LICENSE](LICENSE).
+
+Attribution is recorded in [NOTICE](NOTICE). Existing third-party notices and
+license texts are preserved in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md);
+those components retain their respective licenses.
