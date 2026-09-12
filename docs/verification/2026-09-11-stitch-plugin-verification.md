@@ -58,3 +58,43 @@ plugin_mcp_provenance = UNVERIFIED
 missing_env_error_path = NOT_OBSERVED
 list_projects = BLOCKED_ONLY_BY_MISSING_USER_ENV
 ```
+
+## 2026-09-12 复核附录
+
+本节是事后复核，不修改上面的历史结论，只补充新查明的原因和复验结果。记录中不含任何凭据值。
+
+### 两个未决门禁的根因已查明
+
+`plugin_mcp_provenance=UNVERIFIED` 和 `missing_env_error_path=NOT_OBSERVED` 不是"无法验证"，而是**有效 MCP 定义被同名用户级配置遮蔽**。`codex mcp get stitch` 显示生效定义带有字面 `http_headers: X-Goog-Api-Key=<value>`，且 `env_http_headers: -`；插件的 `.mcp.json` 用的是 `env_http_headers` 且不含 `http_headers`。两者同名 `stitch`，用户级定义胜出。
+
+因此：无论 `STITCH_API_KEY` 是否设置，鉴权都由该字面请求头提供。这同时解释了隔离进程取消环境变量后调用仍成功，以及缺少变量的可操作提示始终观察不到。
+
+无凭据直连验证（只读探测，未使用任何凭据）：`tools/list` 无需凭据即可返回；`tools/call list_projects` 无凭据时返回 `isError: true` 及"Request is missing required authentication credential"。即工具调用确实需要凭据，而当前生效的凭据来自用户级配置而非插件映射。
+
+该字面凭据位于用户自己的 Codex 配置中，属于凭据治理事项：把它改为环境变量后，插件的 `STITCH_API_KEY` 映射才会真正生效。此项需要用户决定，本轮未改动该配置。
+
+### 插件交付形态的变更
+
+方案 Task 6/7 的目标路径 `/Users/wandl/plugins/stitch` 已不存在；实现迁移到公开仓库 `partme-ai/codex-stitch-plugin`（标识 `stitch-design`，v0.3.0，本地目录 `codex-stitch-design-plugin`）。因此个人 marketplace 条目原先指向一个不存在的路径，已修正为实际仓库路径。刷新后 `stitch-design@personal` 的安装缓存已与仓库 HEAD `86bd667` 逐文件一致。
+
+### 离线门禁复验（2026-09-12）
+
+| 门禁 | 结果 |
+| --- | --- |
+| 本地 Skill 库存 | `validated 39 skills` |
+| 上游表行数 | 16 行 |
+| 能力矩阵 | UPSTREAM_ONLY 10 + OVERLAP_MERGED 6 + LOCAL_ONLY 23 = 39，无未分类行，融合行均含验证命令 |
+| README 索引 | 英文 39 行、中文 39 行；无旧计数残留 |
+| quick validation | 39/39 退出码 0 |
+| Markdown 相对引用 | 398 条全部可解析，0 死链（本记录原先写作 412 条，计数方法不同，检查本身通过） |
+| 脚本语法 | `bash -n`、`py_compile`、`node --check` 全部通过 |
+| TypeScript 检查 | 未复现。本机无全局 `tsc`，技能目录未附带类型依赖，`tsc` 仅报缺少 `@types/node` 与 `@babel/*` 声明（TS2307/TS2580）。按方案要求不静默安装依赖，此项标记为工具缺失 |
+| 明文密钥扫描 | 0 匹配（仓库内） |
+| 插件 validator / 测试 | PASS；`validated 39 skills and compatibility distribution 0.3.0`；5 项测试通过 |
+| 技能快照一致性 | 插件 `skills/` 与技能库工作树 `62ef818` 逐文件一致；39 个目录、无符号链接 |
+
+### 本轮新增的阻塞与待决项
+
+- 在线 `list_projects` 复验被账号用量额度挡下（错误类型为用量限额），非鉴权问题；需在额度恢复后重跑。
+- 探针 stderr 出现 `rmcp::transport::worker: worker quit with fatal: Unexpected content-type`，无法归因到 `stitch`：直连该端点时 `notifications/initialized` 返回 202 且带 `content-type: application/json`，与其他本地 MCP server 的失败特征不符。
+- 技能库分支 `feat/stitch-skills-union-plugin`（`62ef818`）与 `main`（`c46f497`）双向分叉（各 15 / 4 个提交），仅能真实合并，不能快进；是否合并入 main 与是否推送 origin 待用户决定，本轮未动。
