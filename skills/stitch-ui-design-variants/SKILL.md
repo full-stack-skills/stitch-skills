@@ -2,7 +2,6 @@
 name: stitch-ui-design-variants
 license: Apache-2.0
 description: Logic skill that generates prompts for alternative design variants e.g. A B testing options.
-allowed-tools: stitch*:* Read Write
 ---
 
 

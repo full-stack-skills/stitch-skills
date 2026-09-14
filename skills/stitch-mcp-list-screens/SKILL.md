@@ -2,7 +2,6 @@
 name: stitch-mcp-list-screens
 license: Apache-2.0
 description: Lists all screens contained within a specific project.
-allowed-tools: stitch*:* Read Write
 ---
 
 
