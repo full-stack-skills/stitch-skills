@@ -2,10 +2,7 @@
 name: stitch-mcp-list-projects
 license: Apache-2.0
 description: Lists all Stitch projects accessible to the user.
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
+allowed-tools: stitch*:* Read Write
 ---
 
 

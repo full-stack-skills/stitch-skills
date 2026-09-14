@@ -1,257 +1,77 @@
 ---
 name: stitch-ui-designer
-description: The Master Orchestrator. Handles the end-to-end flow of designing and generating UI screens. Use this for all "Design X" requests.
+description: 编排 Stitch 屏幕的新建、导入、编辑或变体生成；用户明确要求用 Stitch 实际创建或修改设计时触发。只润色提示词用 stitch-ui-prompt-architect，只写设计文档用 stitch-design-md。
 license: Apache-2.0
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
-  - "web_fetch"
 ---
 
+# Stitch 设计执行编排
 
-# Stitch Designer (Master Skill)
+## 快速开始
 
-This is the entry point for all UI design tasks. It acts as the **"Orchestrator Agent"** that autonomously plans and executes the design workflow.
+1. “用 Stitch 生成门店预约平板页；先给本地可审阅结果。”
+2. “只修改既有订单页顶部搜索区；保留已有范围与来源。”
+3. “按批准数量生成布局变体并核验资产；标出缺少的输入和验证状态。”
 
-## When to use this skill
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-**CRITICAL PREREQUISITE:**
-**You must ONLY use this skill when the user EXPLICITLY mentions "Stitch" in their request.**
+## 能力边界说明
 
-**Use this skill when:**
-- The user asks to "Design a UI", "Create a screen", "Make an app page" **using Stitch**.
-- The user provides a high-level design request (e.g., "I need a dashboard for my SaaS") **and mentions Stitch**.
+### ✅ 擅长处理
 
-**Trigger phrases include:**
-- "Use Stitch to design..."
-- "Stitch me a UI for..."
+- 用 Stitch 生成门店预约平板页。
+- 只修改既有订单页顶部搜索区。
+- 按批准数量生成布局变体并核验资产。
 
-## Workflow (Flow-first, copy-pastable)
+### ⚠️ 需要素材
 
-This skill must follow this workflow end-to-end. Do not skip steps.
+- 目标项目及新建/编辑/变体意图。
+- 界面需求、设备和已有设计系统。
+- 可用工具 schema、目标屏幕及写入范围。
 
-### 0) Preflight (Tool Availability)
+### ❌ 不适用场景及交接
 
-1. Detect whether Stitch MCP tools are available.
-2. If tools are available, follow the **Execution workflow**.
-3. If tools are not available, follow the **Prompt-only workflow**.
+- 只需可复制提示词 → stitch-ui-prompt-architect。
+- 只生成 DESIGN.md → stitch-design-md。
+- 实现后台接口或发布网站 → 目标开发/部署流程，交付设计与资产。
 
-### 1) Intent Classification
+## 工作流程
 
-Determine the task type:
+1. 检测实际工具；无 MCP 时输出 prompt-only 并明确未生成。
+2. 复用项目，按需读取 spec/框架 contract；uviewpro 匹配优先于 uview。
+3. 核对已应用 designSystem；新屏的系统 ID 单独传，提示中不重复主题tokens，legacy/prompt-only保留内联token。
+4. 用 architect 的三段提示按意图 dispatch generate_screen_from_text/edit_screens/generate_variants；ID保留字符串，参数按当前 schema。
+5. 取得 outputComponents、项目及屏幕资产，验证实际图像并保存来源；非幂等写中断先三项读探针，未知结果不重发。
 
-- **New screen**: design + generate a new UI screen.
-- **Refine / Beautify**: modify an existing screen while preserving layout and information architecture.
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-### 2) Design Spec Workflow (Brain)
+## 安全与结果验证
 
-Invoke `stitch-ui-design-spec-generator` with the user request.
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-Expected result:
+- edit/variant 的 selectedScreenIds 来自实际查询。
+- MOBILE/DESKTOP/TABLET 与请求一致。
+- get_project/list_screens/get_screen 对账，无候选记录原因。
 
-- A structured `Design Spec` JSON (Theme, Device, Style, Mode).
+可定制：设备、框架contract、生成/编辑/变体模式、数量和资产目录。增值检查：意图路由；系统token分流；中断写对账。
 
-### 3) Contract Workflow (Hard Constraints)
+## FAQ
 
-If the request includes a named design system / style, fetch constraints from the matching design contract tool and inject them into the final prompt.
+**Q1：交付的主要结果是什么？** 离线编辑请求：仅在 TABLET 订单页头像前加“搜索订单”输入；保留其余布局；准备 edit_screens 参数，实际远程调用0。
 
-Supported mapping (Match Priority: Specific > General):
+**Q2：什么时候应换用其他入口？** 只需可复制提示词 → stitch-ui-prompt-architect；只生成 DESIGN.md → stitch-design-md；实现后台接口或发布网站 → 目标开发/部署流程，交付设计与资产。
 
-- `uview-pro`, `uviewpro`, `uview pro` -> use `stitch-ui-design-spec-uviewpro` (Match this FIRST)
-- `uview`, `uview2`, `uview2.0`, `u-view` -> use `stitch-ui-design-spec-uview`
-- `layui`, `layui-vue`, `layui vue` -> use `stitch-ui-design-spec-layui`
-- `bootstrap`, `bootstrap-vue`, `bs-vue` -> use `stitch-ui-design-spec-bootstrap`
-- `element`, `element-plus`, `el-plus`, `element-ui` -> use `stitch-ui-design-spec-element-plus`
-- `vant`, `vant4`, `vant-ui` -> use `stitch-ui-design-spec-vant`
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：目标项目及新建/编辑/变体意图；界面需求、设备和已有设计系统；可用工具 schema、目标屏幕及写入范围”。依赖这些输入的写操作不执行。
 
-Decision rules:
+**Q4：怎样判断完成？** edit/variant 的 selectedScreenIds 来自实际查询；MOBILE/DESKTOP/TABLET 与请求一致；get_project/list_screens/get_screen 对账，无候选记录原因。
 
-- If the user asks for refine/beautify, or explicitly asks for selector / JSON / `contracts.include` / `states.include`:
-  - Use `stitch-ui-design-spec-uview` or `stitch-ui-design-spec-layui` in **selector mode**.
-  - Treat the returned selection JSON as internal and use the assembled prompt as the execution prompt.
-- Otherwise:
-  - Use `stitch-ui-design-spec-uview` or `stitch-ui-design-spec-layui` in **prefix mode**.
-  - Prepend the returned prefix to `[Context]`.
+**Q5：怎样定制？** 设备、框架contract、生成/编辑/变体模式、数量和资产目录；未提供时沿用现有项目值并标明假设。
 
-### 4) Prompt Assembly Workflow (Pen)
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-Invoke `stitch-ui-prompt-architect` with the user request and (if any) Design Spec + contract prefix. The output must conform to **Prompt Quality Standard: Optimized Prompt Structure** (see below) so that Stitch receives a precise "construction blueprint" rather than a vague idea.
+## 按需参考
 
-**Minimum structure** (always present):
-
-```text
-[Context]
-...
-
-[Layout]
-...
-
-[Components]
-...
-```
-
-**When the request describes an app or multi-section screen**, the assembled prompt MUST additionally follow the **Optimized Prompt Structure** (inspired by enhance-prompt best practice: Project Overview + Design System (required) + Page Structure and Function). See section **Prompt Quality Standard** below.
-
-### 5) Execution Workflow (Hand) — Tools Available
-
-ALWAYS execute immediately (no confirmation loop):
-
-1. Create project: `create_project`
-2. Generate screen: `generate_screen_from_text`
-3. List screens: `list_screens`
-4. Get the target screen: `get_screen` (export screenshot + HTML assets)
-
-### 6) Prompt-only Workflow — Tools Not Available
-
-STOP execution. Do not fake results. Output only a copy-paste prompt for the user to run in Stitch.
-
-## Output Patterns (Strict Templates)
-
-Use these templates to keep outputs consistent.
-
-### Template A — Tools Available (Execution Report)
-
-ALWAYS use this exact template:
-
-```markdown
-# Stitch Design Delivery
-
-## Execution Result
-- Project: projects/{id}
-- Screen: {screenId}
-
-## Asset Export
-- Screenshot: {from get_screen output}
-- HTML: {from get_screen output}
-
-## Notes
-- Prompt: Executed with `[Context] [Layout] [Components]` structure (including required constraints and layout invariants).
-```
-
-### Template B — Tools Not Available (Prompt Only)
-
-ALWAYS use this exact template. When the request is app/product-level or multi-section, the **content** inside each section must follow the **Optimized Prompt Structure** (Project overview in Context; Design system (required) in Context or a dedicated block; Page structure and function with core function + areas in Layout/Components).
-
-```text
-[Context]
-...
-
-[Layout]
-...
-
-[Components]
-...
-```
-
-## Prompt Quality Standard: Optimized Prompt Structure
-
-To make Stitch **accurately** implement the design, the final prompt (from step 4) must be a **detailed construction blueprint**, not a short wishlist. Use the following structure whenever the user describes an app, a product, or a screen with multiple sections.
-
-**Source of truth**: This structure is derived from the optimized-prompt pattern: a clear **project overview**, a **design system (required)** with explicit tokens, and **page structure and function** with one **core function** per page/section plus **area-level details** (top nav, main visual, function area, actions, bottom). Reference: blog "Trae+Stitch MCP+Skills: My New AI Programming Paradigm" — after optimization it becomes a detailed construction blueprint including color scheme, font sizes, button styles, page layout, and UX.
-
-### 1) Project Overview — Required for app/product-level requests
-
-- One short paragraph: **what** the product/screen is, **who** it is for, **style** (e.g. modern minimal, professional and trustworthy, bright and fresh), and **key attributes** (ease of use, information readability, full localized UI, etc.).
-- Example: "An AI ingredient-list analysis tool for end users, turning chemical terms into plain language via image recognition and composition parsing. Modern minimal design, emphasis on ease of use and readability, full localized interface."
-
-### 2) Design System — Required
-
-The prompt MUST include an explicit design system block so Stitch does not guess colors, type, or components. Include:
-
-| Block | Content | Example |
-|-------|---------|--------|
-| **Platform** | Web / Mobile / Desktop, target device or width | "Mobile miniapp, prioritize iOS and Android" / "Admin Web, min width 1280px" |
-| **Theme** | Mood + domain affinity | "Bright and fresh, professional and trustworthy, with domain-friendly tone" |
-| **Color scheme** | Primary + Secondary + Warning + Neutrals (Background, Text, Secondary text, Divider), each with **#hex** and usage | Primary #165DFF for buttons/nav; Secondary #36D399 for positive cues; Background #FFFFFF; Text #1D2129; Secondary text #86909C; Divider #F2F3F5 |
-| **Typography** | Title / Body / Auxiliary: **size (px)** + **font** + **weight** | Title 20px Bold; Body 16px Regular; Auxiliary 14px Light |
-| **Component style** | Buttons / Cards / Icons: radius, shadow, interaction | Buttons 8px radius, soft shadow; Cards 12px radius, light shadow; Icons linear, minimal |
-
-If a **named design system** (uView Pro, Bootstrap, Element Plus, etc.) is used, the contract prefix from step 3 already supplies tokens; the assembled prompt must still state **Platform**, **Theme**, and **Layout invariants** in human-readable form so Stitch understands intent.
-
-### 3) Page Structure and Function
-
-For **each** page or major section:
-
-- **Core function**: One line — "This page/section is for... so that..."
-- **Areas** (choose as needed): **Top nav** / **Hero / main visual** / **Function area** / **Action area** / **Footer** / **Sidebar**.
-- Under each area: **concrete elements** (e.g. "Brand logo + Help entry", "Primary CTA 'Scan label' large filled", "Secondary 'Choose from gallery' outline"). Use specific copy and roles (primary button, secondary button, card, list item) instead of "a button" or "some text".
-
-**Example (single section):**
-
-```text
-### 1. Home (Scan / Upload)
-**Core function**: App entry, guide user to start
-- **Top nav**: Brand logo + Help entry
-- **Hero**: Headline "Ingredient Translator" + subhead "Understand food labels at a glance"
-- **Function area**: Primary button "Scan label" (large, primary fill); Secondary "Choose from gallery" (outline, primary border); short usage copy
-- **Footer**: Privacy and terms links
-```
-
-### 4) Prompt Structure Checklist (before calling generate_screen_from_text)
-
-Verify (and if missing, request the prompt-architect to add):
-
-- [ ] **Project overview** present for app/product-level requests? (one paragraph: what, who, style, key attributes)
-- [ ] **Design system (required)** present? Platform, Theme, **Color scheme with #hex**, **Typography (px + font + weight)**, **Component style** (buttons, cards, icons)
-- [ ] **Per-page/section**: **Core function** one line + **areas** (top nav / hero / function / action / footer) with **concrete elements** and specific copy?
-- [ ] **Layout** and **Components** sections still populated? (macro layout + component list)
-- [ ] No vague placeholders? ("a button" → "primary CTA button 'Sign In'"; "some list" → "vertical list of Workout Cards with thumbnail, duration, Start button")
-
-If any of the above is missing, **re-invoke** `stitch-ui-prompt-architect` with explicit instructions to fill the Optimized Prompt Structure (project overview, design system with hex/px, page structure with core function and area-level details), then re-run the checklist before execution.
-
----
-
-## Anti-Patterns (Strict Prohibitions)
-*   ⛔ **NO FAKE SUCCESS**: If you didn't get a real API response, do not say "Project Created".
-*   ⛔ **NO APP SCAFFOLDING**: Do not invoke any external project scaffolding skills (e.g., `uniappx-project-creator`, `flutter-project-creater`, `react-native-project-creater`) and do not run scripts to create codebases.
-*   ⛔ **NO CODING**: Do not write Vue/React/HTML code in this flow. This skill is for **Design Generation** only.
-*   ⛔ **NO CONFUSION**: A "Stitch Project" is a design workspace, NOT a code repository.
-
-## Keywords
-orchestrator, design agent, ui designer, master skill, design flow, stitch pilot
-
-## References
-
-- [Workflow End-to-End](examples/workflow_end_to_end.md)
-- [Workflows Reference](references/workflows.md)
-- [Optimized Prompt Output Examples (ZH + EN)](examples/optimized_prompt_output_examples.md) — full Chinese and English examples of the optimized prompt (project overview + design system + page structure and function) from the blog "Trae+Stitch MCP+Skills: My New AI Programming Paradigm".
-- **Optimized prompt structure**: Project Overview + Design System (required) + Page Structure and Function. See blog "Trae+Stitch MCP+Skills: My New AI Programming Paradigm" (optimized prompt section). Goal: turn a vague idea into a detailed construction blueprint (colors, font sizes, button styles, layout, UX) to improve Stitch output precision.
-
-## 国内适配
-
-- 支持中文文档和中文注释
-- 示例代码兼容国内开发环境
-- 提供中文 FAQ 和常见问题解答
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

@@ -1,11 +1,6 @@
 ---
 name: stitch-design-md
-description: Analyze Stitch projects and synthesize a semantic design system into DESIGN.md. Uses Stitch MCP list_projects list_screens get_screen get_project to retrieve screens and project metadata; outputs natural-language design tokens for consistent Stitch screen generation. Use with stitch-ui-prompt-architect and stitch-loop for multi-page consistency.
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+description: 从 Stitch 屏幕或用户提供的 HTML/截图整理并验证语义 DESIGN.md；需要可复用视觉语言与来源说明时触发。精确源码提取用 stitch-extract-design-md；提示词和屏幕生成使用各自入口。
 license: Apache-2.0
 ---
 
@@ -13,168 +8,74 @@ license: Apache-2.0
 > （Apache License 2.0，完整文本见同目录 `LICENSE.txt`；上游为非 Google 官方支持产品）的内容。
 > 本项目对其进行了改编与整合，原内容版权归 Google LLC 及其贡献者所有。
 
-# Stitch DESIGN.md
+# Stitch 语义设计系统文档
 
-**Constraint**: Only use this skill when the user explicitly mentions "Stitch" or when preparing design system docs for Stitch generation.
+## 快速开始
 
-You are an expert **Design Systems Lead**. Your goal is to analyze Stitch project assets and synthesize a **Semantic Design System** into a file named `DESIGN.md`.
+1. “从门店预约页面提炼颜色角色；先给本地可审阅结果。”
+2. “把本地 HTML 整理为 Stitch 设计文档；保留已有范围与来源。”
+3. “检查 DESIGN.md 是否能指导下一屏；标出缺少的输入和验证状态。”
 
-## Overview
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-`DESIGN.md` is the **source of truth** for prompting Stitch to generate new screens that match existing design language. Stitch interprets design through visual descriptions and specific color values. This skill uses **Stitch MCP** to fetch project and screen data; you can call `stitch-mcp-list-projects`, `stitch-mcp-list-screens`, `stitch-mcp-get-screen`, `stitch-mcp-get-project` (or the underlying MCP tools with your client’s prefix) to retrieve metadata and download HTML/screenshots.
+## 能力边界说明
 
-## Prerequisites
+### ✅ 擅长处理
 
-- Stitch MCP Server configured (see https://stitch.withgoogle.com/docs/mcp/guide/)
-- A Stitch project with at least one designed screen
-- Stitch Effective Prompting Guide: https://stitch.withgoogle.com/docs/learn/prompting/
+- 从门店预约页面提炼颜色角色。
+- 把本地 HTML 整理为 Stitch 设计文档。
+- 检查 DESIGN.md 是否能指导下一屏。
 
-## Retrieval and Networking
+### ⚠️ 需要素材
 
-Use Stitch MCP (or skills `stitch-mcp-list-projects`, `stitch-mcp-get-project`, `stitch-mcp-list-screens`, `stitch-mcp-get-screen`) in this order.
+- 实际 HTML/截图或 Stitch 标识。
+- 主题与代表性页面范围。
+- 观察来源和希望输出的文件路径。
 
-### When the user provides a Stitch design URL
+### ❌ 不适用场景及交接
 
-If the user pastes a **Stitch design page link** (e.g. `https://stitch.withgoogle.com/projects/3492931393329678076?node-id=375b1aadc9cb45209bee8ad4f69af450`):
+- 精确框架源码 token 挖掘 → stitch-extract-design-md。
+- 新风格提案 → stitch-taste-design。
+- 将系统发布到项目 → stitch-manage-design-system。
 
-1. **Parse the URL**:
-   - **projectId** = segment after `/projects/` and before `?` (e.g. `3492931393329678076`)
-   - **screenId** = query parameter `node-id` (e.g. `375b1aadc9cb45209bee8ad4f69af450`)
-2. **Fetch the screen**: Call `[prefix]:get_screen` with the parsed `projectId` and `screenId` (no need to call list_projects or list_screens).
-3. **Continue** with step 5 below (asset download) and then Analysis & Synthesis.
+## 工作流程
 
-### When project/screen IDs are unknown
+1. 区分本地与 Stitch 来源；本地不强制 MCP 或虚构 projectId。
+2. 从实际资产提取氛围、色值角色、字体、圆角、阴影、间距和导航。
+3. 将实现类名转成可理解的视觉描述，同时保留确切值与来源。
+4. 写六节 DESIGN.md；本地使用 Source，未知或推断值单独标注。
+5. 执行入口的五项语义 lint；用文档重建 palette/layout 说明验证可用性，失败保留旧文档并输出缺失清单。
 
-1. **Namespace discovery**: Run `list_tools` to find the Stitch MCP prefix (e.g. `mcp_stitch__stitch:`). Use that prefix for all calls.
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-2. **Project lookup** (if Project ID unknown):
-   - Call `[prefix]:list_projects` with `filter: "view=owned"`
-   - Identify the target project by title; extract Project ID from `name` (e.g. `projects/13534454087919359824`)
+## 安全与结果验证
 
-3. **Screen lookup** (if Screen ID unknown):
-   - Call `[prefix]:list_screens` with `projectId` (numeric ID only)
-   - Identify target screen by title; extract Screen ID from `name`
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-4. **Metadata fetch**:
-   - Call `[prefix]:get_screen` with `projectId` and `screenId` (numeric IDs)
-   - Use returned `screenshot.downloadUrl`, `htmlCode.downloadUrl`, `width`, `height`, `deviceType`, and project `designTheme`
+- 六节非空，颜色有名称/值/角色。
+- 没有未解析占位或伪造项目ID。
+- 没有截图证据就不称视觉已确认。
 
-5. **Asset download** (also after URL-based get_screen):
-   - Use `web_fetch` or equivalent to download HTML from `htmlCode.downloadUrl` and optionally screenshot from `screenshot.downloadUrl`
-   - Parse HTML for Tailwind classes, custom CSS, and component patterns
+可定制：来源模式、主题、组件范围、术语语言、输出路径。增值检查：本地/远程双来源；语义lint；观察与建议分离。
 
-6. **Project metadata**:
-   - Call `[prefix]:get_project` with project `name` (full path `projects/{id}`) to get `designTheme`, fonts, roundness, custom colors, layout principles
+## FAQ
 
-## Analysis & Synthesis
+**Q1：交付的主要结果是什么？** Source: demo/theme.css；主行动蓝 (#2563eb) 用于“确认预约”；布局为顶栏+预约列表；未观察的悬停状态标为建议。
 
-### 1. Extract Project Identity
-- Project title and Project ID (from JSON `name`)
+**Q2：什么时候应换用其他入口？** 精确框架源码 token 挖掘 → stitch-extract-design-md；新风格提案 → stitch-taste-design；将系统发布到项目 → stitch-manage-design-system。
 
-### 2. Define the Atmosphere
-From screenshot and HTML: mood, density, aesthetic (e.g. "Airy," "Minimalist," "Utilitarian").
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：实际 HTML/截图或 Stitch 标识；主题与代表性页面范围；观察来源和希望输出的文件路径”。依赖这些输入的写操作不执行。
 
-### 3. Map the Color Palette
-For each key color:
-- Descriptive name (e.g. "Deep Muted Teal-Navy")
-- Hex in parentheses (e.g. "#294056")
-- Functional role (e.g. "Used for primary actions")
+**Q4：怎样判断完成？** 六节非空，颜色有名称/值/角色；没有未解析占位或伪造项目ID；没有截图证据就不称视觉已确认。
 
-### 4. Translate Geometry & Shape
-- `rounded-full` → "Pill-shaped"
-- `rounded-lg` → "Subtly rounded corners"
-- `rounded-none` → "Sharp, squared-off edges"
+**Q5：怎样定制？** 来源模式、主题、组件范围、术语语言、输出路径；未提供时沿用现有项目值并标明假设。
 
-### 5. Describe Depth & Elevation
-Shadows and layers: "Flat," "Whisper-soft diffused shadows," "Heavy drop shadows," etc.
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-## Output Guidelines
+## 按需参考
 
-- **Language:** Descriptive design terminology and natural language only
-- **Format:** Markdown following the structure below
-- **Precision:** Exact hex codes plus descriptive names
-- **Context:** Explain the "why" behind design decisions
-
-## Output Format (DESIGN.md Structure)
-
-```markdown
-# Design System: [Project Title]
-**Project ID:** [Insert Project ID Here]
-
-## 1. Visual Theme & Atmosphere
-(Description of mood, density, and aesthetic philosophy.)
-
-## 2. Color Palette & Roles
-(Descriptive Name + Hex + Functional Role for each color.)
-
-## 3. Typography Rules
-(Font family, weights for headers vs body, letter-spacing.)
-
-## 4. Component Stylings
-* **Buttons:** Shape, color, behavior.
-* **Cards/Containers:** Corner roundness, background, shadow.
-* **Inputs/Forms:** Stroke style, background.
-
-## 5. Layout Principles
-(Whitespace, margins, grid alignment.)
-
-## 6. Design System Notes for Stitch Generation
-(Language and color references to copy into Stitch prompts; see examples/DESIGN.md.)
-```
-
-## Integration with This Repo
-
-- **First time:** Generate `DESIGN.md` with this skill from an existing Stitch screen.
-- **Multi-page:** Use `stitch-ui-prompt-architect` to inject DESIGN.md Section 6 into prompts; use `stitch-loop` for baton-based multi-page builds.
-- **Framework alignment:** For framework-specific constraints (Layui, Element Plus, uView, etc.), combine DESIGN.md with the corresponding `stitch-ui-design-spec-*` contract in the prompt.
-
-## Best Practices
-
-- **Be descriptive:** e.g. "Ocean-deep Cerulean (#0077B6)" not "blue"
-- **Be functional:** Explain what each element is used for
-- **Be consistent:** Same terminology throughout
-- **Be precise:** Exact values in parentheses after natural language
-
-## Common Pitfalls
-
-- ❌ Technical jargon without translation ("rounded-xl" → "generously rounded corners")
-- ❌ Omitting color codes or only descriptive names
-- ❌ Skipping functional roles of design elements
-- ❌ Vague atmosphere descriptions
-- ❌ Ignoring shadows or spacing patterns
-
-## Keywords
-
-**English:** DESIGN.md, design system, Stitch, color palette, typography, layout.  
-**中文关键词：** DESIGN.md、设计系统、Stitch、色彩、排版、布局。
-
-## References
-
-- [Examples](examples/usage.md)
-- [Example DESIGN.md](examples/DESIGN.md) — Full sample output
-- [Stitch Prompting Guide](https://stitch.withgoogle.com/docs/learn/prompting/)
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

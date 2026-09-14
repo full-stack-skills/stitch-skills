@@ -24,7 +24,7 @@
 
 **Stitch MCP 技能** 是一组 AI 编码智能体技能，属于 [Full Stack Skills](https://github.com/partme-ai/full-stack-skills) 生态，由 [PartMe.AI](https://github.com/partme-ai) 维护。
 
-本包包含 **28 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。
+本包包含 **39 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。本产品由 PartMe.AI 维护，在原有本地技能库上融合了 Google Labs `google-labs-code/stitch-skills` 固定快照 `0337446dadde6f8c94210444e2aa9d546126480f` 的部分材料；这不代表 Google 官方背书。来源与许可见 [NOTICE](NOTICE) 和[上游记录](docs/upstream/google-stitch-skills-0337446.md)。
 
 ## 📦 安装
 
@@ -38,11 +38,39 @@ npx skills add full-stack-skills/stitch-skills
 npx skills add full-stack-skills/stitch-skills --skill <skill-name>
 ```
 
-## 🎯 技能列表 (28)
+### 远程 Stitch MCP
+
+在 Stitch Settings 创建、吊销和轮换 API Key，仅通过运行环境变量注入，并在 MCP 配置中引用变量名。禁止把密钥明文提交到配置、日志、提示词或问题报告中。
+
+```bash
+export STITCH_API_KEY="<仅在本机设置>"
+```
+
+```json
+{
+  "mcpServers": {
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "env_http_headers": {
+        "X-Goog-Api-Key": "STITCH_API_KEY"
+      }
+    }
+  }
+}
+```
+
+设置变量后重启智能体运行时，并先用只读的项目列表调用验证连接，再使用写操作。
+
+## 🎯 技能列表 (39)
 
 | 技能 | 描述 |
 |------|------|
+| `stitch-code-to-design` | 通过静态页面提取、设计系统提取和上传，将现有前端应用或组件转换为 Stitch 设计。 |
 | `stitch-design-md` | Analyze Stitch projects and synthesize a semantic design system into DESIGN.md. Uses Stitch MCP list_projects list_sc... |
+| `stitch-extract-design-md` | 从前端源码、样式、主题和令牌中提取 DESIGN.md 设计系统。 |
+| `stitch-extract-static-html` | 提取可分享或上传至 Stitch 的自包含静态 HTML。 |
+| `stitch-loop` | 使用接力循环模式通过 Stitch 迭代构建网站。 |
+| `stitch-manage-design-system` | 检索、创建、更新并应用 Stitch 设计系统。 |
 | `stitch-mcp-create-project` | Creates a new Stitch project container. Use this when starting a new design task, app idea, or fresh workspace. |
 | `stitch-mcp-generate-screen-from-text` | Generates high-fidelity UI screens or wireframes from text descriptions. The core Text-to-UI engine. |
 | `stitch-mcp-get-project` | Retrieves the detailed metadata of a specific Stitch project. |
@@ -50,9 +78,13 @@ npx skills add full-stack-skills/stitch-skills --skill <skill-name>
 | `stitch-mcp-list-projects` | Lists all Stitch projects accessible to the user. |
 | `stitch-mcp-list-screens` | Lists all screens contained within a specific project. |
 | `stitch-react-components` | Convert Stitch designs into modular Vite/React components with validation and design token consistency. Uses Stitch M... |
+| `stitch-react-native` | 将 Stitch HTML 设计转换为 React Native 组件，或同步已有原生组件。 |
+| `stitch-react-vite-dashboard` | 将 Stitch 设计转换为生产级 React 与 Vite 仪表盘。 |
 | `stitch-remotion` | Generate walkthrough videos from Stitch projects using Remotion. Retrieves screens via Stitch MCP list_projects list_... |
 | `stitch-shadcn-ui` | Expert guidance for integrating and building applications with shadcn/ui. Component discovery, installation npx shadc... |
+| `stitch-site-md` | 将项目需求整理为 Stitch 构建循环使用的 SITE.md 项目约章。 |
 | `stitch-skill-creator` | "A factory skill for creating new Stitch Scenario Skills. It enforces the \"Design First, Execute Last\" SOP and stan... |
+| `stitch-taste-design` | 生成指导高品质、非模板化 UI 决策的语义化 DESIGN.md。 |
 | `stitch-ued-guide` | UED guidelines, visual vocabulary, and prompt structure for Stitch. Use when the user asks about layout/style terms, ... |
 | `stitch-ui-design-spec-bootstrap` | Bootstrap-Vue design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
 | `stitch-ui-design-spec-element-plus` | Element Plus design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
@@ -64,7 +96,9 @@ npx skills add full-stack-skills/stitch-skills --skill <skill-name>
 | `stitch-ui-design-variants` | Logic skill that generates prompts for alternative design variants e.g. A B testing options. |
 | `stitch-ui-designer` | The Master Orchestrator. Handles the end-to-end flow of designing and generating UI screens. Use this for all "Design... |
 | `stitch-ui-prompt-architect` | Builds Stitch-ready prompts from vague UI ideas or from Design Spec and User Request. Outputs sectioned Context, Layo... |
+| `stitch-upload-to-stitch` | 将本地视觉资产、HTML 页面或设计文档上传到 Stitch 项目。 |
 | `stitch-uview-components` | Convert Stitch designs into uni-app and Vue 2 and uView 2.0 pages and components. Uses Stitch MCP get_screen for retr... |
+| `stitch-uview-plus-components` | 将 Stitch 设计转换为 uni-app、Vue 3 和 uview-plus 页面与组件。 |
 | `stitch-uviewpro-components` | Convert Stitch designs into uni-app and Vue 3 and uView Pro pages and components. Uses Stitch MCP get_screen for retr... |
 | `stitch-vue-bootstrap-components` | Convert Stitch designs into modular Vite/Vue 3 and BootstrapVue or BootstrapVueNext components. Uses [BootstrapVue Vu... |
 | `stitch-vue-element-components` | Convert Stitch designs into modular Vite/Vue 3 and Element Plus components. Uses Stitch MCP get_screen to retrieve de... |
@@ -105,4 +139,5 @@ cp -r stitch-skills/skills/* .claude/skills/
 
 Apache 2.0 — 详见 [LICENSE](LICENSE)。
 
-第三方组件归属声明：详见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+来源归属见 [NOTICE](NOTICE)；原有第三方通知及许可正文完整保留于
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，相关组件仍遵循各自许可。

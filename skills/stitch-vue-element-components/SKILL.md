@@ -2,12 +2,7 @@
 name: stitch-vue-element-components
 license: Apache-2.0
 description: Convert Stitch designs into modular Vite/Vue 3 and Element Plus components. Uses Stitch MCP get_screen to retrieve design JSON and HTML; supports high-reliability fetch via scripts; enforces Vue SFC structure, data decoupling, and Element Plus component contracts.
-allowed-tools:
-  - "stitch*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+allowed-tools: stitch*:* Bash Read Write web_fetch
 ---
 
 

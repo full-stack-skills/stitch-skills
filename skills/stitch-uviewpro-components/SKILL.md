@@ -2,12 +2,7 @@
 name: stitch-uviewpro-components
 license: Apache-2.0
 description: Convert Stitch designs into uni-app and Vue 3 and uView Pro pages and components. Uses Stitch MCP get_screen for retrieval; high-reliability fetch via scripts; enforces uni-app page structure and uView Pro u-* component contracts, rpx, script setup.
-allowed-tools:
-  - "stitch*:*"
-  - "Bash"
-  - "Read"
-  - "Write"
-  - "web_fetch"
+allowed-tools: stitch*:* Bash Read Write web_fetch
 ---
 
 
@@ -52,7 +47,7 @@ You are a **frontend engineer** turning Stitch designs into clean, modular uni-a
 
 1. **Environment**: Ensure uni-app project has uView Pro installed and configured (Vue 3, main.js, uni.scss).
 2. **Data layer**: Create or update data sources (e.g. `data/mockData.js`) from the design content.
-3. **Page drafting**: Use `resources/page-template.vue` as base; replace placeholder with real page name and uView Pro tags per contract.
+3. **Page drafting**: Follow `examples/usage.md` and the architecture checklist; draft the actual page with uView Pro tags per contract. No page-template.vue is bundled.
 4. **Wiring**: Register pages in `pages.json`; add tabBar or navigation as needed.
 5. **Quality check**: Verify against `resources/architecture-checklist.md`; run in HBuilderX or CLI to confirm on simulator/device.
 
@@ -120,7 +115,7 @@ Testing is triggered by user instruction, not by calling MCP directly. Flow: use
 - [Component API (props/events)](api/component-api.md)
 - [Official documentation](references/official.md)
 - [Architecture checklist](resources/architecture-checklist.md)
-- [Page template](resources/page-template.vue)
+- [Page implementation example](examples/usage.md)
 - [Stitch API / MCP](https://stitch.withgoogle.com/docs/mcp/guide/)
 
 ## 能力边界

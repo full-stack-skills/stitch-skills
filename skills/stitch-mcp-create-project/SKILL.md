@@ -2,10 +2,7 @@
 name: stitch-mcp-create-project
 description: Creates a new Stitch project container. Use this when starting a new design task, app idea, or fresh workspace.
 license: Apache-2.0
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
+allowed-tools: stitch*:* Read Write
 ---
 
 

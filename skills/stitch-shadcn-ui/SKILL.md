@@ -1,145 +1,77 @@
 ---
 name: stitch-shadcn-ui
+description: 为 Stitch 来源的 React 页面选择、迁移和验证 shadcn/ui 原语、主题和 registry 内容时触发。首次通用 HTML 转 React 用 stitch-react-components；不自动迁移无关工程。
 license: Apache-2.0
-description: Expert guidance for integrating and building applications with shadcn/ui. Component discovery, installation npx shadcn@latest add customization, blocks, and best practices. Use with Stitch-generated React apps for consistent, accessible UI built on Radix/Base UI and Tailwind.
-allowed-tools:
-  - "shadcn*:*"
-  - "mcp_shadcn*"
-  - "Read"
-  - "Write"
-  - "Bash"
-  - "web_fetch"
 ---
 
-# shadcn/ui Component Integration
+# Stitch 的 shadcn/ui 迁移
 
-**Constraint**: Use when the user asks about shadcn/ui, Stitch + React + shadcn, or building React UIs with shadcn components.
+## 快速开始
 
-You are a **frontend engineer** specializing in shadcn/ui—reusable, accessible, customizable components (Radix UI or Base UI + Tailwind). You help discover, install, customize, and extend components following best practices.
+1. “把预约表单迁为 shadcn Input/Button；先给本地可审阅结果。”
+2. “迁移订单详情 Dialog 并保留键盘行为；保留已有范围与来源。”
+3. “比较 registry 源码与现有主题 tokens；标出缺少的输入和验证状态。”
 
-## Core Principles
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-shadcn/ui is **not a library**—components are **copied into your project**:
+## 能力边界说明
 
-- **Full ownership**: Code lives in your repo, not node_modules
-- **Full customization**: Style, behavior, and structure under your control
-- **No version lock-in**: Update components when you choose
-- **Zero runtime overhead**: No extra bundle, only the code you add
+### ✅ 擅长处理
 
-## Component Discovery and Installation
+- 把预约表单迁为 shadcn Input/Button。
+- 迁移订单详情 Dialog 并保留键盘行为。
+- 比较 registry 源码与现有主题 tokens。
 
-### Browse and install
+### ⚠️ 需要素材
 
-- **List components**: Use shadcn MCP `list_components` (or browse [ui.shadcn.com](https://ui.shadcn.com)).
-- **Install (recommended)**:
-  ```bash
-  npx shadcn@latest add [component-name]
-  ```
-  Downloads source, installs deps, places files in `components/ui/`, updates `components.json`.
-- **Manual**: Use MCP `get_component` to get source; create `components/ui/[name].tsx`; install peer deps.
+- 目标工程与 components.json。
+- Stitch 资产及当前组件行为。
+- Tailwind/React 版本和待迁移范围。
 
-### Project setup
+### ❌ 不适用场景及交接
 
-- **New project**: `npx shadcn@latest create` (style, baseColor, RSC, etc.).
-- **Existing project**: `npx shadcn@latest init` → creates `components.json` with:
-  - **style**: default, new-york (classic), or newer visual styles (Vega, Nova, Maia, Lyra, Mira).
-  - **baseColor**: slate, gray, zinc, neutral, stone.
-  - **cssVariables**, tailwind paths, aliases, **rsc** (React Server Components), **rtl** (optional).
+- 通用 React 页面转换 → stitch-react-components。
+- 原生 App → stitch-react-native。
+- 业务登录或支付服务 → 项目接口流程，提交表单行为契约。
 
-**Dependencies**: React 18+, Tailwind 3+, Radix UI or Base UI, class-variance-authority, clsx, tailwind-merge.
+## 工作流程
 
-### Custom registries (optional)
+1. 读取当前工程版本和 Stitch HTML/截图，明确只迁移的组件。
+2. 先读 migration-guide，核对原 Props、状态、键盘与主题。
+3. 检索当前可用 registry 工具和组件源，审查依赖与变更再应用。
+4. 按现有 cn/cva/主题约定迁移一个组件并保留可访问性，验证后再处理下一个。
+5. 运行目标类型/lint/build 与键盘/主题检查；verify-setup.sh 仅是 Tailwind3 启发式，不代表 Tailwind4 或全部通过。
 
-For custom or third-party registries (defined in `components.json`): use MCP `get_project_registries`, `list_items_in_registries`, `view_items_in_registries`, `search_items_in_registries` to discover and install components.
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-## Architecture
+## 安全与结果验证
 
-- **File structure**: `src/components/ui/` for shadcn components; `src/components/[custom]/` for your composed components.
-- **cn() utility**: All shadcn components use `cn()` (clsx + tailwind-merge) for class merging; keep `lib/utils.ts` with this helper.
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-## Customization
+- 保留 Dialog 焦点恢复与键盘关闭。
+- registry 源和依赖实际审查。
+- 浅/深主题及焦点可见性经验证。
 
-- **Theme**: Edit Tailwind config and CSS variables in `globals.css` (`:root` and `.dark`).
-- **Variants**: Use `cva` for variant logic (e.g. button variant/size).
-- **Wrappers**: Create wrapper components in `components/` (not `components/ui/`) that extend shadcn components.
+可定制：registry、原语、主题、variant、目标组件和迁移顺序。增值检查：逐组件迁移；版本分流；可访问性回归清单。
 
-## Blocks and Complex Components
+## FAQ
 
-shadcn provides **blocks** (auth, dashboard, sidebar, etc.): use MCP `list_blocks`, `get_block` to retrieve and install. Blocks are organized by category (e.g. calendar, dashboard, login, sidebar, products).
+**Q1：交付的主要结果是什么？** 预约表单 label htmlFor="phone" + Input id="phone"；保留错误 aria-describedby；不把电话号码写入示例。
 
-## Validation and Quality (align with official)
+**Q2：什么时候应换用其他入口？** 通用 React 页面转换 → stitch-react-components；原生 App → stitch-react-native；业务登录或支付服务 → 项目接口流程，提交表单行为契约。
 
-Before committing components:
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：目标工程与 components.json；Stitch 资产及当前组件行为；Tailwind/React 版本和待迁移范围”。依赖这些输入的写操作不执行。
 
-1. **Type check**: Run `tsc --noEmit`.
-2. **Lint**: Run the project linter.
-3. **Accessibility**: Use tools like axe DevTools.
-4. **Visual QA**: Test light and dark modes.
-5. **Responsive**: Verify at different breakpoints.
+**Q4：怎样判断完成？** 保留 Dialog 焦点恢复与键盘关闭；registry 源和依赖实际审查；浅/深主题及焦点可见性经验证。
 
-## Accessibility
+**Q5：怎样定制？** registry、原语、主题、variant、目标组件和迁移顺序；未提供时沿用现有项目值并标明假设。
 
-Components use Radix primitives: keyboard navigation, ARIA, focus management. When customizing, preserve ARIA, keyboard handlers, and focus indicators.
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-## Integration with Stitch
+## 按需参考
 
-- After converting Stitch screens to React with **stitch-react-components**, add shadcn components for forms, dialogs, tables, etc. using this skill.
-- Align theme (colors, spacing) with DESIGN.md from **stitch-design-md** if the project uses it.
-
-## Troubleshooting
-
-- **Import errors**: Check `components.json` and `tsconfig.json` paths (`@/*`).
-- **Style conflicts**: Ensure Tailwind and `globals.css` are configured; match CSS variable names.
-- **Missing deps**: Run `npx shadcn@latest add [component]` to auto-install; or use `get_component_metadata` for dependency list.
-
-## Keywords
-
-**English:** shadcn, shadcn/ui, Radix, Tailwind, React, components, blocks.  
-**中文关键词：** shadcn、Radix、Tailwind、组件。
-
-## References
-
-- [Examples](examples/usage.md)
-- [Tailwind → shadcn/ui](references/tailwind-to-shadcn.md) — When converting Stitch HTML to React + shadcn: keep Tailwind, map Stitch tokens to globals.css (--primary, --background, etc.); use shadcn components (Button, Card, Input) with className/cn().
-- [shadcn/ui docs](https://ui.shadcn.com/docs)
-- [Radix UI](https://www.radix-ui.com/)
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。

@@ -3,6 +3,52 @@ Stitch MCP 是一套强大的 AI UI 生成工具，基于你提供的 MCP 定义
 
 这份规划旨在将 Stitch 的原子能力封装为 Agent 可调用的高阶技能（Skills），并建立严谨的 "设计 -> 执行" 规范，确保生成的 UI 既符合用户创意，又具备工程落地的高质量。
 
+本地产品当前包含 **39 个规范 Skill**，融合来源为 Google Labs `google-labs-code/stitch-skills` 固定快照 `0337446dadde6f8c94210444e2aa9d546126480f`。这是 PartMe.AI 维护的本地产品，不代表 Google 官方背书；来源和许可见 [NOTICE](NOTICE) 与[上游记录](docs/upstream/google-stitch-skills-0337446.md)。远程 MCP 使用 `https://stitch.googleapis.com/mcp`，并通过环境变量 `STITCH_API_KEY` 向 `X-Goog-Api-Key` 请求头注入密钥；不得在仓库、配置示例、日志或提示词中保存密钥明文。
+
+#### 规范 Skill 索引（39）
+
+| Skill |
+| :--- |
+| `stitch-code-to-design` |
+| `stitch-design-md` |
+| `stitch-extract-design-md` |
+| `stitch-extract-static-html` |
+| `stitch-loop` |
+| `stitch-manage-design-system` |
+| `stitch-mcp-create-project` |
+| `stitch-mcp-generate-screen-from-text` |
+| `stitch-mcp-get-project` |
+| `stitch-mcp-get-screen` |
+| `stitch-mcp-list-projects` |
+| `stitch-mcp-list-screens` |
+| `stitch-react-components` |
+| `stitch-react-native` |
+| `stitch-react-vite-dashboard` |
+| `stitch-remotion` |
+| `stitch-shadcn-ui` |
+| `stitch-site-md` |
+| `stitch-skill-creator` |
+| `stitch-taste-design` |
+| `stitch-ued-guide` |
+| `stitch-ui-design-spec-bootstrap` |
+| `stitch-ui-design-spec-element-plus` |
+| `stitch-ui-design-spec-generator` |
+| `stitch-ui-design-spec-layui` |
+| `stitch-ui-design-spec-uview` |
+| `stitch-ui-design-spec-uviewpro` |
+| `stitch-ui-design-spec-vant` |
+| `stitch-ui-design-variants` |
+| `stitch-ui-designer` |
+| `stitch-ui-prompt-architect` |
+| `stitch-upload-to-stitch` |
+| `stitch-uview-components` |
+| `stitch-uview-plus-components` |
+| `stitch-uviewpro-components` |
+| `stitch-vue-bootstrap-components` |
+| `stitch-vue-element-components` |
+| `stitch-vue-layui-components` |
+| `stitch-vue-vant-components` |
+
 ---
 
 ### 🎨 Stitch Agent Skills 体系规划

@@ -1,5 +1,7 @@
 # Optimized Prompt Output Examples (中英文示例)
 
+These examples document the inline-token prompt-only/legacy-tool fallback. For new-screen generation with an applied project-level designSystem, retain the Context/Layout/Components content structure, send system tokens through `stitch-manage-design-system`, and omit theme tokens from the generation prompt.
+
 Based on the **「优化后的提示词」** (optimized prompt) structure from the blog **《Trae+Stitch MCP+Skills：我的AI编程新范式》**. Use these as reference when assembling Stitch prompts so the model receives a precise construction blueprint (project overview + design system + page structure and function).
 
 ---

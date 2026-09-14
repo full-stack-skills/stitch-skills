@@ -2,10 +2,7 @@
 name: stitch-skill-creator
 description: "A factory skill for creating new Stitch Scenario Skills. It enforces the \"Design First, Execute Last\" SOP and standard Stitch architectural patterns. Use this when you need to add support for a new domain e.g. \"Music Apps\" \"Social Networks\" to the Stitch ecosystem."
 license: Apache-2.0
-allowed-tools:
-  - "Read"
-  - "Write"
-  - "Bash"
+allowed-tools: Read Write Bash
 ---
 
 

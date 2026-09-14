@@ -2,10 +2,7 @@
 name: stitch-ui-design-spec-uviewpro
 license: Apache-2.0
 description: uView Pro design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt.
-allowed-tools:
-  - "stitch*:*"
-  - "Read"
-  - "Write"
+allowed-tools: stitch*:* Read Write
 ---
 
 

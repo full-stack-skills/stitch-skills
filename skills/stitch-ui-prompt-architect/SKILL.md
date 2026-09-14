@@ -1,9 +1,6 @@
 ---
 name: stitch-ui-prompt-architect
-description: Builds Stitch-ready prompts from vague UI ideas or from Design Spec and User Request. Outputs sectioned Context, Layout, and Components. Supports DESIGN.md and framework contract prefix.
-allowed-tools:
-  - "Read"
-  - "Write"
+description: 润色模糊 UI 需求或将已有 Design Spec/框架契约转为 Stitch 三段提示词时触发；产物仅为可复制文本。实际生成屏幕由 stitch-ui-designer 执行。
 license: Apache-2.0
 ---
 
@@ -11,232 +8,74 @@ license: Apache-2.0
 > （Apache License 2.0，完整文本见同目录 `LICENSE.txt`；上游为非 Google 官方支持产品）的内容。
 > 本项目对其进行了改编与整合，原内容版权归 Google LLC 及其贡献者所有。
 
-# Stitch UI Prompt Architect
+# Stitch 提示词设计
 
-**Constraint**: Only use this skill when the user explicitly mentions "Stitch" or when orchestrating a Stitch design task.
+## 快速开始
 
-This skill acts as a **Senior UX Designer** and **Prompt Engineer**. It supports two paths so that local behavior is strictly stronger than a single-path prompt skill:
+1. “润色门店预约页的模糊 Stitch 提示；先给本地可审阅结果。”
+2. “把 TABLET Spec 和 uView Pro 契约组装为提示；保留已有范围与来源。”
+3. “为既有屏幕只增加搜索栏编写精确编辑描述；标出缺少的输入和验证状态。”
 
-- **Path A — Enhance vague prompt**: Transform rough or vague UI ideas into polished, Stitch-optimized prompts (specificity, UI/UX keywords, design system context, numbered structure). Use when the user gives a short or unclear prompt.
-- **Path B — Spec → prompt**: Merge the User Request and the Design Spec (from `stitch-ui-design-spec-generator`) into a final sectioned Stitch prompt. Use when a structured spec already exists.
+面向设计师、前端开发者和维护此流程的团队。设计师提供意图与素材，开发者提供工程/工具，团队在交接中保留来源和验收状态。
 
-## Prerequisites
+## 能力边界说明
 
-- **Stitch Effective Prompting Guide**: https://stitch.withgoogle.com/docs/learn/prompting/ — consult for latest best practices; they may supersede or complement the patterns below.
+### ✅ 擅长处理
 
-## Official Documentation (by Framework)
+- 润色门店预约页的模糊 Stitch 提示。
+- 把 TABLET Spec 和 uView Pro 契约组装为提示。
+- 为既有屏幕只增加搜索栏编写精确编辑描述。
 
-When injecting framework contract prefix (Path B) or translating component keywords, prefer the following authoritative docs:
+### ⚠️ 需要素材
 
-| Framework | Official / Guide | Components | Other |
-|-----------|------------------|------------|--------|
-| **Bootstrap Vue 3** | [bootstrap-vue.org](https://bootstrap-vue.org) · [docs](https://bootstrap-vue.org/docs) · [Vue 3](https://bootstrap-vue.org/vue3) | [components](https://bootstrap-vue.org/docs/components) | [GitHub](https://github.com/bootstrap-vue/bootstrap-vue) |
-| **Element Plus** | [element-plus.org (zh-CN)](https://element-plus.org/zh-CN/) | [design](https://element-plus.org/en-US/guide/design) · [overview](https://element-plus.org/en-US/component/overview) | [GitHub](https://github.com/element-plus/element-plus) |
-| **Layui-Vue** | [layui-vue.com](https://www.layui-vue.com/zh-CN/index) | [guide](https://www.layui-vue.com/zh-CN/guide/introduce) · [components](https://www.layui-vue.com/zh-CN/components) | [GitHub](https://github.com/layui-vue/layui-vue) |
-| **Vant (Vue 3)** | [vant-ui.github.io](https://vant-ui.github.io/) | [Vant zh-CN](https://vant-ui.github.io/vant/#/zh-CN) | [GitHub](https://github.com/youzan/vant) |
-| **uView 2.0 (Vue 2)** | [uviewui.com](https://www.uviewui.com/) | [guide/demo](https://www.uviewui.com/guide/demo.html) · [components](https://www.uviewui.com/components/intro.html) | [GitHub](https://github.com/umicro/uView2.0) |
-| **uView Pro (Vue 3)** | [uviewpro.cn](https://uviewpro.cn/) | [guide](https://uviewpro.cn/zh/guide/intro.html) · [components](https://uviewpro.cn/zh/components/intro.html) · [tools](https://uviewpro.cn/zh/tools/intro.html) · [layout](https://uviewpro.cn/zh/layout/intro.html) | — |
+- 页面目的、内容与目标设备。
+- 可选 Design Spec、DESIGN.md 或框架名。
+- 项目系统是否已应用及执行模式。
 
-## When to Use
+### ❌ 不适用场景及交接
 
-- **Path A**: User wants to polish a UI prompt before sending to Stitch; improve a prompt that produced poor results; add design system consistency to a simple idea; structure a vague concept into an actionable prompt.
-- **Path B**: Orchestrator has already produced a Design Spec (e.g. from `stitch-ui-design-spec-generator`) and needs a final [Context]/[Layout]/[Components] prompt; or user requests a prompt for a named framework (uView, Element Plus, Layui, Bootstrap, Vant).
+- 实际生成/编辑屏幕 → stitch-ui-designer。
+- 提取视觉语言文档 → stitch-design-md。
+- 直接实现前端代码 → 对应组件技能，提供本提示和源资产。
 
----
+## 工作流程
 
-## Path A: Enhance Vague Prompt
+1. 短/模糊需求走 Path A；已有 Spec/命名框架走 Path B，尊重已批准要求。
+2. 明确 platform、purpose 和真实文案；缺项给标注假设的可用提示。
+3. 根据可观察的系统状态分流：已应用系统的新屏去掉主题tokens；prompt-only/legacy内联；targeted-edit只写请求的差值。
+4. 输出 [Context]、[Layout]、[Components] 三段，布局编号，控件有具体标签和状态。
+5. 检查框架contract只包含当前屏幕需要的内容；禁止编造数据/统计，不调用生成工具。
 
-Follow these steps to turn a vague idea into a Stitch-ready prompt.
+按依赖排序：来源核对 → 本地产物 → 已授权外部操作 → 验证交接。多任务先做当前主路径；缺信息先输出假设草案，再精确列明缺少什么以及用途，不使用“请提供更多背景”的空泛提示。
 
-### Step 1: Assess the Input
+## 安全与结果验证
 
-Evaluate what's missing:
+不读取无关账号配置，不收集用户密码；凭据只由环境或已授权连接器提供。示例只用演示数据；上传前将客户姓名、电话、订单号替换为演示值，并检查 HTML、截图和文件元数据。禁止将密钥、会话 cookie、base64 全文或签名下载 URL 写入报告/版本库。未经验证的参数、视觉效果、业务数字不得编造；输出注明来源、决策依据、实际执行与尚未验证部分。
 
-| Element | Check for | If missing... |
-|---------|-----------|---------------|
-| **Platform** | "web", "mobile", "desktop" | Add based on context or ask |
-| **Page type** | "landing page", "dashboard", "form" | Infer from description |
-| **Structure** | Numbered sections/components | Create logical page structure |
-| **Visual style** | Adjectives, mood, vibe | Add descriptors (see [references/KEYWORDS.md](references/KEYWORDS.md)) |
-| **Colors** | Specific values or roles | Add design system or suggest |
-| **Components** | UI-specific terms | Translate to proper keywords |
+- 三段顺序和设备明确。
+- 已应用系统提示不重复hex/font/theme/radius。
+- 编辑只覆盖请求区域。
 
-### Step 2: Check for DESIGN.md
+可定制：设备、路径A/B、框架、文案、系统状态和目标区域。增值检查：模糊词转组件；双路径三段契约；系统/内联/编辑分流。
 
-- **If DESIGN.md exists**: Read it; extract design system block (palette, typography, component styles); include as "DESIGN SYSTEM (REQUIRED)" in output.
-- **If DESIGN.md does not exist**: Add a tip at the end: "For consistent designs across multiple screens, create a DESIGN.md using the `stitch-design-md` skill."
+## FAQ
 
-### Step 3: Apply Enhancements
+**Q1：交付的主要结果是什么？** [Context] 门店预约平板页，只编辑顶栏。 / [Layout] 1. 在头像前放搜索输入。 / [Components] 标签“搜索订单”，占位“输入订单号”，清除动作与焦点态。
 
-- **UI/UX keywords**: Replace vague terms (e.g. "menu at the top" → "navigation bar with logo and menu items"; "button" → "primary call-to-action button"). Use [references/KEYWORDS.md](references/KEYWORDS.md) for component and adjective palettes.
-- **Vibe**: Add descriptive adjectives ("modern" → "clean, minimal, with generous whitespace"; "dark mode" → "dark theme with high-contrast accents on deep backgrounds").
-- **Structure**: Organize into numbered **Page Structure** (Header, Hero, Content Area, Footer, etc.).
-- **Colors**: Format as `Descriptive Name (#hex) for functional role` (e.g. "Deep Ocean Blue (#1a365d) for primary buttons").
+**Q2：什么时候应换用其他入口？** 实际生成/编辑屏幕 → stitch-ui-designer；提取视觉语言文档 → stitch-design-md；直接实现前端代码 → 对应组件技能，提供本提示和源资产。
 
-### Step 4: Format Output (Path A)
+**Q3：缺少输入会怎样？** 先给明确标记的本地假设草案，并列出“需要补充：页面目的、内容与目标设备；可选 Design Spec、DESIGN.md 或框架名；项目系统是否已应用及执行模式”。依赖这些输入的写操作不执行。
 
-Structure the enhanced prompt as:
+**Q4：怎样判断完成？** 三段顺序和设备明确；已应用系统提示不重复hex/font/theme/radius；编辑只覆盖请求区域。
 
-```markdown
-[One-line description of the page purpose and vibe]
+**Q5：怎样定制？** 设备、路径A/B、框架、文案、系统状态和目标区域；未提供时沿用现有项目值并标明假设。
 
-**DESIGN SYSTEM (REQUIRED):**
-- Platform: [Web/Mobile], [Desktop/Mobile]-first
-- Theme: [Light/Dark], [style descriptors]
-- Background: [Color description] (#hex)
-- Primary Accent: [Color description] (#hex) for [role]
-- Text Primary: [Color description] (#hex)
-- [Additional design tokens...]
+**Q6：是否自动上传、安装或上线？** 只执行当前请求与已有授权覆盖的动作；没有远程回执不称上传成功，没有运行验证不称上线。额外安装或扩大范围需先说明具体影响。
 
-**Page Structure:**
-1. **[Section]:** [Description]
-2. **[Section]:** [Description]
-...
-```
+## 按需参考
 
-**Output options**: Return as text; or if the user requests, write to `next-prompt.md` (for `stitch-loop`) or a custom file.
-
----
-
-## Path B: Spec + Request → Sectioned Prompt
-
-Use when you have a **Design Spec** (from `stitch-ui-design-spec-generator`) and a **User Request**.
-
-### Input
-
-- **User Request**: e.g. "Login page with social auth".
-- **Design Spec**: JSON with `deviceType`, `designMode`, `theme`, `styleKeywords`, etc.
-
-### Output Format (Must)
-
-Return a single prompt with:
-
-```text
-[Context]
-...
-
-[Layout]
-...
-
-[Components]
-...
-```
-
-### Construction Logic
-
-**1. Context & Style**  
-Combine `deviceType`, `designMode`, `theme`, `styleKeywords`.  
-Example: "Mobile High-Fidelity login screen. Cyberpunk aesthetic. Dark mode with neon blue accents."
-
-**2. Design Contract Prefix (Hard Constraints)**  
-If the user request includes a named style (e.g. "uview 风格"), prepend the corresponding contract to `[Context]`:
-
-| Keyword | Use skill output as prefix |
-|---------|----------------------------|
-| `uview-pro`, `uviewpro` | `stitch-ui-design-spec-uviewpro` |
-| `uview`, `uview2` | `stitch-ui-design-spec-uview` |
-| `element`, `element-plus` | `stitch-ui-design-spec-element-plus` |
-| `vant`, `vant4` | `stitch-ui-design-spec-vant` |
-| `layui`, `layui-vue` | `stitch-ui-design-spec-layui` |
-| `bootstrap`, `bs-vue` | `stitch-ui-design-spec-bootstrap` |
-
-**3. Contract Selection JSON**  
-When a named design system is present, generate `CONTRACT_SELECTION_JSON_V1` to decide which component contracts and UI state snippets to inject (include only what the current screen needs). Schema: `version`, `designSystem`, `mode`, `contracts.include`, `states.include`.
-
-**4. Layout Structure**  
-- Mobile: Header → Body (Stack) → Footer (Nav/Action).  
-- Desktop: Sidebar/TopNav → Main Grid → Widgets.
-
-**5. Component Details**  
-Translate requirements into UI components (e.g. "Login" → Inputs, Primary Button, Forgot Pass link).
-
-**6. Content**  
-Use specific copy (e.g. "Welcome back, Agent") instead of placeholder "Text".
-
----
-
-## Example (Path A: Vague → Enhanced)
-
-**Input:** "make me a login page"
-
-**Output:**
-
-```markdown
-A clean, trustworthy login page with a centered form and subtle branding.
-
-**DESIGN SYSTEM (REQUIRED):**
-- Platform: Web, Desktop-first
-- Theme: Light, minimal, professional
-- Background: Clean White (#ffffff)
-- Surface: Soft Gray (#f9fafb) for form card
-- Primary Accent: Deep Blue (#2563eb) for submit button and links
-- Text Primary: Near Black (#111827) for headings
-- Text Secondary: Medium Gray (#6b7280) for labels
-- Buttons: Subtly rounded (8px), full-width on form
-- Cards: Gently rounded (12px), soft shadow for elevation
-
-**Page Structure:**
-1. **Header:** Minimal logo, centered
-2. **Login Card:** Centered form with email, password fields, "Forgot password?" link
-3. **Submit Button:** Primary blue "Sign In" button
-4. **Footer:** "Don't have an account? Sign up" link
-```
-
----
-
-## Example (Path B: Spec → Prompt)
-
-> "Mobile login screen for a Fintech App. Clean minimalist aesthetic. Light mode.  
-> Layout: Center-aligned vertical stack.  
-> Header: Brand logo 'PayFast' and 'Welcome' title.  
-> Form: Input field for 'Email' with mail icon. Input field for 'Password' with eye toggle.  
-> Actions: Full-width primary blue button 'Sign In'. 'Forgot Password?' link.  
-> Footer: 'Create Account' link."
-
----
-
-## Tips
-
-1. **Path choice**: Use Path A for short/vague prompts; Path B when a spec already exists or a framework name is given.
-2. **Be specific early** for vague inputs; **match intent** — don’t over-design if the user wants something simple.
-3. **Numbered sections** help Stitch understand hierarchy.
-4. **Design system**: For multi-page consistency, use DESIGN.md (from `stitch-design-md`) or inject framework contract (Path B).
-5. **Edits**: One change at a time; don’t bundle unrelated changes.
-
-## Keywords
-
-**English:** Stitch, prompt, enhance, vague, design spec, DESIGN.md, next-prompt, stitch-loop, uView, Element, Layui, Bootstrap, Vant.  
-**中文关键词：** Stitch、提示词、增强、模糊需求、设计规范、DESIGN.md、next-prompt、stitch-loop、uView、Element、Layui、Bootstrap、Vant。
-
-## References
-
-- [KEYWORDS](references/KEYWORDS.md) — UI/UX keyword palettes for Path A.
-- [Official documentation (by framework)](#official-documentation-by-framework) — Authoritative docs for BootstrapVue, Element Plus, Layui-Vue, Vant, uView 2, uView Pro.
-
-## References
-
-- [Examples](examples/usage.md)
-- [Keywords](references/KEYWORDS.md)
-
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
+- 执行详细映射、API 或模板时读 [扩展流程](references/workflow.md)。
+- 遇到失败/异常输入时读 [反模式与 Gotchas](references/anti-patterns.md)。
+- 涉及边缘场景、兼容性、定制和授权时读 [深度 FAQ](references/faq-deep.md)。
+- 需要完整输入输出及验证场景时读 [本地应用示例](examples/local-validation.md)。
+- 本地实现依据为当前技能伴随源码及 [固定上游快照](https://github.com/google-labs-code/stitch-skills/tree/0337446dadde6f8c94210444e2aa9d546126480f)；结构遵循 [Agent Skills 规范](https://agentskills.io/specification)。工具当前行为以实际 schema 为准，未连接时不声称已核验线上行为。
