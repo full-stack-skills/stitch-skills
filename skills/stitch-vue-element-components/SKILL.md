@@ -3,8 +3,6 @@ name: stitch-vue-element-components
 license: Apache-2.0
 description: Convert Stitch designs into modular Vite/Vue 3 and Element Plus components. Uses Stitch MCP get_screen to retrieve design JSON and HTML; supports high-reliability fetch via scripts; enforces Vue SFC structure, data decoupling, and Element Plus component contracts.
 ---
-
-
 # Stitch to Vue 3 + Element Plus Components
 
 **Constraint**: Only use this skill when the user explicitly mentions "Stitch" and converting Stitch screens to **Vue 3 + Element Plus** (Vite, .vue SFC).
@@ -26,7 +24,7 @@ You are a **frontend engineer** turning Stitch designs into clean, modular Vue 3
 
 1. **Discover Stitch MCP prefix**: Run `list_tools` to find the prefix (e.g. `mcp_stitch__stitch:`).
 2. **Resolve projectId and screenId**: (1) If the user provided a **Stitch design URL**, parse **projectId** from the path and **screenId** from the `node-id` query. (2) Otherwise, or when the user wants to choose a project/screen, call **list_projects** (e.g. filter `view=owned`) then **list_screens** with the chosen projectId to get screenIds.
-3. **Fetch screen metadata**: Call `[prefix]:get_screen` with `projectId` and `screenId` to get design JSON, `htmlCode.downloadUrl`, `screenshot.downloadUrl`, dimensions, deviceType.
+3. **Fetch screen metadata**: Construct `name: projects/{project}/screens/{screen}` from the string ID segments and call `[prefix]:get_screen` to get design JSON, `htmlCode.downloadUrl`, `screenshot.downloadUrl`, dimensions, deviceType.
 4. **High-reliability HTML download**: AI fetch tools can fail on Google Cloud Storage URLs. Use Bash to run the skill script:
    ```bash
    bash scripts/fetch-stitch.sh "<htmlCode.downloadUrl>" "temp/source.html"
@@ -52,7 +50,7 @@ You are a **frontend engineer** turning Stitch designs into clean, modular Vue 3
 
 ## Integration with This Repo
 
-- **Get screen**: Use **stitch-mcp-get-screen** (or MCP `get_screen`) with projectId and screenId. Obtain IDs either by parsing a **Stitch design URL** or by using **stitch-mcp-list-projects** and **stitch-mcp-list-screens** when no URL is given or when the user needs to browse/select.
+- **Get screen**: Use **stitch-mcp-get-screen** (or MCP `get_screen`) with `name: projects/{project}/screens/{screen}`. Obtain the ID segments from a Stitch URL or the list Skills.
 - **Design spec**: If Stitch was generated with **stitch-ui-design-spec-element-plus** constraints, map to Vue SFC and Element Plus components. If converting from Stitch HTML (e.g. get_screen htmlCode), use [references/tailwind-to-element-plus.md](references/tailwind-to-element-plus.md) for Tailwind utility → px/theme, then [references/contract.md](references/contract.md) for component API.
 - **Design system**: If the project has DESIGN.md (from **stitch-design-md**), align colors and typography with that semantic system when mapping to Element tokens.
 
@@ -79,42 +77,3 @@ You are a **frontend engineer** turning Stitch designs into clean, modular Vue 3
 - [Component template](resources/component-template.vue)
 - [Stitch API / MCP](https://stitch.withgoogle.com/docs/mcp/guide/)
 
-## 能力边界
-
-### ✅ 适用场景
-- 当你需要使用此技能对应的技术栈时
-- 当项目需要遵循最佳实践时
-- 当需要快速上手或深入理解核心概念时
-
-### ⚠️ 需要注意
-- 复杂业务逻辑需要结合具体场景调整
-- 性能优化需要根据实际数据量评估
-
-### ❌ 不适用场景
-- 不相关的技术栈或框架
-- 需要完全自定义的特殊场景
-
-## 常见陷阱 (Gotchas)
-
-1. **版本兼容性**：注意框架版本与依赖库的兼容性，不同版本 API 可能有差异
-2. **配置文件格式**：配置文件格式错误是最常见的问题，建议使用编辑器的语法检查
-3. **环境变量**：确保所有必要的环境变量已正确设置，敏感信息不要硬编码
-4. **依赖冲突**：多版本共存时注意依赖冲突，使用 lock 文件锁定版本
-5. **性能陷阱**：大数据量场景下注意性能优化，避免 N+1 查询等常见问题
-
-## 使用流程
-
-### Step 1: 环境准备
-确保开发环境已安装必要的依赖和工具。
-
-### Step 2: 配置初始化
-根据项目需求进行基础配置。
-
-### Step 3: 核心功能使用
-按照示例代码实现核心功能。
-
-### Step 4: 测试验证
-运行测试确保功能正常。
-
-### Step 5: 部署上线
-完成开发后进行部署和监控。
