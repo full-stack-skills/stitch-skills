@@ -6,7 +6,7 @@
 
 输入：“按已准备提示生成门店预约移动页。只用演示素材，先返回本地结果与验证范围。”
 
-输出：本地输入 projectId='123'、deviceType='TABLET'、三段预约提示 → 待调用参数草案；没有工具回执则 screenId 未确认，不虚构。
+输出：本地输入 projectId='123'、Tablet 768x1024、三段预约提示 → 只含 projectId/prompt 的待调用参数草案；没有工具回执则 screenId 未确认，不虚构。
 
 验证：模型和设备属于当前schema而非历史猜测；若示例无远程环境，明确远程状态未执行。
 
@@ -14,7 +14,7 @@
 
 输入：“在已知项目创建订单桌面线框图；范围限当前需求。”
 
-输出：按顺序列出核对项目和结构提示，已应用系统时遵循 architect 的独立系统通道。 调用一次 generate_screen_from_text，记录返回session/outputComponents及成功或未知状态。 通过 list_screens/get_screen 获取真实结果，get_project核对归属；参数是否带projects前缀按各工具schema。 最后返回已处理对象与来源，未运行的项目单列。
+输出：按顺序核对项目和结构提示，已应用系统时遵循 architect 的独立系统通道。调用一次 `generate_screen_from_text`，记录返回 session/outputComponents 及成功或未知状态。用 `list_screens` 的纯 `projectId` 取得真实 screen ID，再以 `get_screen` 的 `name: projects/{project}/screens/{screen}` 读取，并用 `get_project` 核对归属。最后返回已处理对象与来源，未运行项目单列。
 
 验证：sessionId不被当screenId。
 

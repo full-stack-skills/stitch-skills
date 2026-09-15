@@ -24,7 +24,7 @@
 
 **Stitch MCP 技能** 是一组 AI 编码智能体技能，属于 [Full Stack Skills](https://github.com/partme-ai/full-stack-skills) 生态，由 [PartMe.AI](https://github.com/partme-ai) 维护。
 
-本包包含 **39 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。本产品由 PartMe.AI 维护，在原有本地技能库上融合了 Google Labs `google-labs-code/stitch-skills` 固定快照 `0337446dadde6f8c94210444e2aa9d546126480f` 的部分材料；这不代表 Google 官方背书。来源与许可见 [NOTICE](NOTICE) 和[上游记录](docs/upstream/google-stitch-skills-0337446.md)。
+本包包含 **43 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。本产品由 PartMe.AI 维护，在原有本地技能库上融合了 Google Labs `google-labs-code/stitch-skills` 固定快照 `0337446dadde6f8c94210444e2aa9d546126480f` 的部分材料；这不代表 Google 官方背书。来源与许可见 [NOTICE](NOTICE) 和[上游记录](docs/upstream/google-stitch-skills-0337446.md)。
 
 ## 📦 安装
 
@@ -61,15 +61,19 @@ export STITCH_API_KEY="<仅在本机设置>"
 
 设置变量后重启智能体运行时，并先用只读的项目列表调用验证连接，再使用写操作。
 
-## 🎯 技能列表 (39)
+## 🎯 技能列表 (43)
 
 | 技能 | 描述 |
 |------|------|
 | `stitch-code-to-design` | 通过静态页面提取、设计系统提取和上传，将现有前端应用或组件转换为 Stitch 设计。 |
+| `stitch-delete-project` | 安全删除一个明确指定的 Stitch 项目；先预览完整资源名并再次取得批准，删除后只读对账。 |
+| `stitch-delivery-harness` | 把 Stitch 屏幕变成完整高保真交付：可编辑 HTML、视觉增强、验证、用户批准与可追溯归档。 |
 | `stitch-design-md` | Analyze Stitch projects and synthesize a semantic design system into DESIGN.md. Uses Stitch MCP list_projects list_sc... |
+| `stitch-design-use` | Stitch Design 根路由：按最窄下游 Skill 分发认证、读取、生成、设计系统、资产处理与交付请求。 |
 | `stitch-extract-design-md` | 从前端源码、样式、主题和令牌中提取 DESIGN.md 设计系统。 |
 | `stitch-extract-static-html` | 提取可分享或上传至 Stitch 的自包含静态 HTML。 |
 | `stitch-loop` | 使用接力循环模式通过 Stitch 迭代构建网站。 |
+| `stitch-local-setup` | 本地首次设置 Stitch（获取 STITCH_API_KEY、一次性配置、认证失败恢复）。 |
 | `stitch-manage-design-system` | 检索、创建、更新并应用 Stitch 设计系统。 |
 | `stitch-mcp-create-project` | Creates a new Stitch project container. Use this when starting a new design task, app idea, or fresh workspace. |
 | `stitch-mcp-generate-screen-from-text` | Generates high-fidelity UI screens or wireframes from text descriptions. The core Text-to-UI engine. |

@@ -24,7 +24,7 @@ English | [简体中文](./README.zh-CN.md)
 
 **Stitch MCP Skills** is a curated collection of Agent Skills for AI coding agents, part of the [Full Stack Skills](https://github.com/partme-ai/full-stack-skills) ecosystem maintained by [PartMe.AI](https://github.com/partme-ai).
 
-This package includes **39 skills**. Each skill is a self-contained `SKILL.md` file that AI agents load on-demand. It is a PartMe.AI-maintained local product that combines the existing library with selected material from Google Labs' `google-labs-code/stitch-skills` snapshot `0337446dadde6f8c94210444e2aa9d546126480f`; this does not imply Google endorsement. See [NOTICE](NOTICE) and the [source record](docs/upstream/google-stitch-skills-0337446.md).
+This package includes **43 skills**. Each skill is a self-contained `SKILL.md` file that AI agents load on-demand. It is a PartMe.AI-maintained local product that combines the existing library with selected material from Google Labs' `google-labs-code/stitch-skills` snapshot `0337446dadde6f8c94210444e2aa9d546126480f`; this does not imply Google endorsement. See [NOTICE](NOTICE) and the [source record](docs/upstream/google-stitch-skills-0337446.md).
 
 ## 📦 Install
 
@@ -61,15 +61,19 @@ export STITCH_API_KEY="<set-locally>"
 
 Restart the agent runtime after setting the variable. Verify connectivity with a read-only project listing before using write tools.
 
-## 🎯 Skills (39)
+## 🎯 Skills (43)
 
 | Skill | Description |
 |-------|-------------|
 | `stitch-code-to-design` | Convert an existing frontend application or component into a Stitch design through static extraction, design-system capture, and upload. |
+| `stitch-delete-project` | Safely delete an explicitly named Stitch project; preview the full resource name, re-confirm, and reconcile read-only. |
+| `stitch-delivery-harness` | Turn a Stitch screen into a complete high-fidelity delivery: editable HTML, art enhancement, verification, approval, and traceable archival. |
 | `stitch-design-md` | Analyze Stitch projects and synthesize a semantic design system into DESIGN.md. Uses Stitch MCP list_projects list_sc... |
+| `stitch-design-use` | Stitch Design root router: dispatch auth, read, generate, design-system, asset, and delivery requests to the narrowest Skill. |
 | `stitch-extract-design-md` | Extract a DESIGN.md design system from frontend source, styles, themes, and tokens. |
 | `stitch-extract-static-html` | Capture a self-contained static HTML representation for sharing or Stitch upload. |
 | `stitch-loop` | Iteratively build websites with Stitch using a baton-passing loop. |
+| `stitch-local-setup` | First-time local Stitch setup (obtain STITCH_API_KEY, one-time configuration, auth-failure recovery). |
 | `stitch-manage-design-system` | Retrieve, create, update, and apply Stitch design systems. |
 | `stitch-mcp-create-project` | Creates a new Stitch project container. Use this when starting a new design task, app idea, or fresh workspace. |
 | `stitch-mcp-generate-screen-from-text` | Generates high-fidelity UI screens or wireframes from text descriptions. The core Text-to-UI engine. |
