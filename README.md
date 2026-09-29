@@ -24,7 +24,7 @@ English | [简体中文](./README.zh-CN.md)
 
 **Stitch MCP Skills** is a curated collection of Agent Skills for AI coding agents, part of the [Full Stack Skills](https://github.com/partme-ai/full-stack-skills) ecosystem maintained by [PartMe.AI](https://github.com/partme-ai).
 
-This package includes **43 skills**. Each skill is a self-contained `SKILL.md` file that AI agents load on-demand. It is a PartMe.AI-maintained local product that combines the existing library with selected material from Google Labs' `google-labs-code/stitch-skills` snapshot `0337446dadde6f8c94210444e2aa9d546126480f`; this does not imply Google endorsement. See [NOTICE](NOTICE) and the [source record](docs/upstream/google-stitch-skills-0337446.md).
+This package includes **44 skills**. Each skill is a self-contained `SKILL.md` file that AI agents load on-demand. It is a PartMe.AI-maintained local product that combines the existing library with selected material from Google Labs' `google-labs-code/stitch-skills` snapshot `0337446dadde6f8c94210444e2aa9d546126480f`; this does not imply Google endorsement. See [NOTICE](NOTICE) and the [source record](docs/upstream/google-stitch-skills-0337446.md).
 
 ## 📦 Install
 
@@ -37,6 +37,11 @@ Or install specific skills:
 ```bash
 npx skills add full-stack-skills/stitch-skills --skill <skill-name>
 ```
+
+
+### Local design specifications and prompts
+
+Use `stitch-design-spec` as the single authoring entry. The two former names remain compatibility adapters only. Full packages, full-stack-doc module documents and prompt-only output share one contract. Local authoring skips authentication. See the [skill](skills/stitch-design-spec/SKILL.md) for templates, provenance and complete examples.
 
 ### Remote Stitch MCP
 
@@ -61,53 +66,110 @@ export STITCH_API_KEY="<set-locally>"
 
 Restart the agent runtime after setting the variable. Verify connectivity with a read-only project listing before using write tools.
 
-## 🎯 Skills (43)
+## 🎯 Skills (44)
 
-| Skill | Description |
-|-------|-------------|
-| `stitch-code-to-design` | Convert an existing frontend application or component into a Stitch design through static extraction, design-system capture, and upload. |
-| `stitch-delete-project` | Safely delete an explicitly named Stitch project; preview the full resource name, re-confirm, and reconcile read-only. |
-| `stitch-delivery-harness` | Turn a Stitch screen into a complete high-fidelity delivery: editable HTML, art enhancement, verification, approval, and traceable archival. |
-| `stitch-design-md` | Analyze Stitch projects and synthesize a semantic design system into DESIGN.md. Uses Stitch MCP list_projects list_sc... |
-| `stitch-design-use` | Stitch Design root router: dispatch auth, read, generate, design-system, asset, and delivery requests to the narrowest Skill. |
-| `stitch-extract-design-md` | Extract a DESIGN.md design system from frontend source, styles, themes, and tokens. |
-| `stitch-extract-static-html` | Capture a self-contained static HTML representation for sharing or Stitch upload. |
-| `stitch-loop` | Iteratively build websites with Stitch using a baton-passing loop. |
-| `stitch-local-setup` | First-time local Stitch setup (obtain STITCH_API_KEY, one-time configuration, auth-failure recovery). |
-| `stitch-manage-design-system` | Retrieve, create, update, and apply Stitch design systems. |
-| `stitch-mcp-create-project` | Creates a new Stitch project container. Use this when starting a new design task, app idea, or fresh workspace. |
-| `stitch-mcp-generate-screen-from-text` | Generates high-fidelity UI screens or wireframes from text descriptions. The core Text-to-UI engine. |
-| `stitch-mcp-get-project` | Retrieves the detailed metadata of a specific Stitch project. |
-| `stitch-mcp-get-screen` | Retrieves the full details of a specific screen, including HTML code. |
-| `stitch-mcp-list-projects` | Lists all Stitch projects accessible to the user. |
-| `stitch-mcp-list-screens` | Lists all screens contained within a specific project. |
-| `stitch-react-components` | Convert Stitch designs into modular Vite/React components with validation and design token consistency. Uses Stitch M... |
-| `stitch-react-native` | Convert Stitch HTML designs to React Native components or synchronize existing native components. |
-| `stitch-react-vite-dashboard` | Convert Stitch designs into production React and Vite dashboards. |
-| `stitch-remotion` | Generate walkthrough videos from Stitch projects using Remotion. Retrieves screens via Stitch MCP list_projects list_... |
-| `stitch-shadcn-ui` | Expert guidance for integrating and building applications with shadcn/ui. Component discovery, installation npx shadc... |
-| `stitch-site-md` | Synthesize project requirements into a SITE.md constitution for the Stitch build loop. |
-| `stitch-skill-creator` | "A factory skill for creating new Stitch Scenario Skills. It enforces the \"Design First, Execute Last\" SOP and stan... |
-| `stitch-taste-design` | Generate a semantic DESIGN.md that guides premium, non-generic UI decisions. |
-| `stitch-ued-guide` | UED guidelines, visual vocabulary, and prompt structure for Stitch. Use when the user asks about layout/style terms, ... |
-| `stitch-ui-design-spec-bootstrap` | Bootstrap-Vue design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
-| `stitch-ui-design-spec-element-plus` | Element Plus design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
-| `stitch-ui-design-spec-generator` | Translates user requirements into structured Design Specs for Theme, Color, and Typography. |
-| `stitch-ui-design-spec-layui` | Layui-Vue design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
-| `stitch-ui-design-spec-uview` | uView 2 design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
-| `stitch-ui-design-spec-uviewpro` | uView Pro design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
-| `stitch-ui-design-spec-vant` | Vant 4 design spec for Stitch. Outputs hard-constraints prefix or selector JSON and assembled prompt. |
-| `stitch-ui-design-variants` | Logic skill that generates prompts for alternative design variants e.g. A B testing options. |
-| `stitch-ui-designer` | The Master Orchestrator. Handles the end-to-end flow of designing and generating UI screens. Use this for all "Design... |
-| `stitch-ui-prompt-architect` | Builds Stitch-ready prompts from vague UI ideas or from Design Spec and User Request. Outputs sectioned Context, Layo... |
-| `stitch-upload-to-stitch` | Upload local visual assets, HTML pages, or design documents to a Stitch project. |
-| `stitch-uview-components` | Convert Stitch designs into uni-app and Vue 2 and uView 2.0 pages and components. Uses Stitch MCP get_screen for retr... |
-| `stitch-uview-plus-components` | Convert Stitch designs into uni-app, Vue 3, and uview-plus pages and components. |
-| `stitch-uviewpro-components` | Convert Stitch designs into uni-app and Vue 3 and uView Pro pages and components. Uses Stitch MCP get_screen for retr... |
-| `stitch-vue-bootstrap-components` | Convert Stitch designs into modular Vite/Vue 3 and BootstrapVue or BootstrapVueNext components. Uses [BootstrapVue Vu... |
-| `stitch-vue-element-components` | Convert Stitch designs into modular Vite/Vue 3 and Element Plus components. Uses Stitch MCP get_screen to retrieve de... |
-| `stitch-vue-layui-components` | Convert Stitch designs into modular Vite/Vue 3 and Layui-Vue components. Uses Stitch MCP get_screen for retrieval; hi... |
-| `stitch-vue-vant-components` | Convert Stitch designs into modular Vite/Vue 3 and Vant 4 mobile components. Uses Stitch MCP get_screen for retrieval... |
+**42 primary skills + 2 compatibility adapters.** Local specification and prompt authoring require no Stitch credentials.
+
+Naming: keep `stitch-design-spec` / `stitch-design-harness` as upper-level entrypoints; use `stitch-ui-*` for concrete UI work, `stitch-ui-contract-*` for framework constraints, and `stitch-ui-<stack>-components` for UI code conversion. Keep `stitch-mcp-*` for tool adapters; retain explicit names for root routing, documents and specialized operations.
+
+### Upper-level entrypoints and delivery
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-design-use](skills/stitch-design-use/SKILL.md) | Route a request to the appropriate skill. |
+| [stitch-design-spec](skills/stitch-design-spec/SKILL.md) | Compile page contracts, states, Stitch prompts, coverage and task mappings. |
+| [stitch-design-harness](skills/stitch-design-harness/SKILL.md) | Manage resumable design delivery, evidence, user approval and archival. |
+
+### Concrete UI design capabilities
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-ui-execute](skills/stitch-ui-execute/SKILL.md) | Execute screen generation, editing, post-import editing and variants. |
+| [stitch-ui-style](skills/stitch-ui-style/SKILL.md) | Propose visual style, typography, colors and motion in DESIGN.md. |
+| [stitch-ui-guide](skills/stitch-ui-guide/SKILL.md) | Provide UI/UX vocabulary and guidance for design descriptions. |
+| [stitch-ui-variants](skills/stitch-ui-variants/SKILL.md) | Prepare alternative design prompts without executing screen generation. |
+| [stitch-ui-loop](skills/stitch-ui-loop/SKILL.md) | Build pages through a bounded, authorized backlog and hand off progress. |
+
+### Framework design contracts: before generation
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-ui-contract-bootstrap](skills/stitch-ui-contract-bootstrap/SKILL.md) | Bootstrap/Vue component, layout and state constraints. |
+| [stitch-ui-contract-element-plus](skills/stitch-ui-contract-element-plus/SKILL.md) | Element Plus component, layout and state constraints. |
+| [stitch-ui-contract-layui](skills/stitch-ui-contract-layui/SKILL.md) | Layui-Vue component, layout and state constraints. |
+| [stitch-ui-contract-uview2](skills/stitch-ui-contract-uview2/SKILL.md) | Design constraints for uni-app / Vue 2 / uView 2. |
+| [stitch-ui-contract-uviewpro](skills/stitch-ui-contract-uviewpro/SKILL.md) | Design constraints for uni-app / Vue 3 / uView Pro. |
+| [stitch-ui-contract-vant](skills/stitch-ui-contract-vant/SKILL.md) | Vant 4 component, layout and state constraints. |
+
+### Documents and design systems
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-design-md](skills/stitch-design-md/SKILL.md) | Synthesize a source-backed semantic DESIGN.md from screens, HTML or images. |
+| [stitch-extract-design-md](skills/stitch-extract-design-md/SKILL.md) | Extract DESIGN.md from frontend code, styles and themes. |
+| [stitch-site-md](skills/stitch-site-md/SKILL.md) | Create SITE.md, navigation and backlog for page iteration. |
+| [stitch-manage-design-system](skills/stitch-manage-design-system/SKILL.md) | Read, create, update and apply remote Stitch design systems. |
+
+### Assets and project operations
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-code-to-design](skills/stitch-code-to-design/SKILL.md) | Bring existing frontend pages and design language into Stitch. |
+| [stitch-extract-static-html](skills/stitch-extract-static-html/SKILL.md) | Extract static HTML and available assets without automatic upload. |
+| [stitch-upload](skills/stitch-upload/SKILL.md) | Upload authorized images, HTML or design documents. |
+| [stitch-local-setup](skills/stitch-local-setup/SKILL.md) | Configure local access and recover from authentication failures. |
+| [stitch-delete-project](skills/stitch-delete-project/SKILL.md) | Delete an explicitly identified remote project and reconcile the result. |
+
+### MCP tool adapters
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-mcp-create-project](skills/stitch-mcp-create-project/SKILL.md) | Create a Stitch project container. |
+| [stitch-mcp-generate-screen-from-text](skills/stitch-mcp-generate-screen-from-text/SKILL.md) | Submit a prepared prompt to text-to-screen generation. |
+| [stitch-mcp-get-project](skills/stitch-mcp-get-project/SKILL.md) | Read a specified project. |
+| [stitch-mcp-get-screen](skills/stitch-mcp-get-screen/SKILL.md) | Read a specified screen and its assets. |
+| [stitch-mcp-list-projects](skills/stitch-mcp-list-projects/SKILL.md) | List accessible projects. |
+| [stitch-mcp-list-screens](skills/stitch-mcp-list-screens/SKILL.md) | List screens within a project. |
+
+### Code conversion and presentations: after design
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-ui-react-components](skills/stitch-ui-react-components/SKILL.md) | Convert or synchronize Stitch designs into React/Vite components. |
+| [stitch-ui-react-native-components](skills/stitch-ui-react-native-components/SKILL.md) | Convert designs into React Native screens and native components. |
+| [stitch-ui-react-vite-dashboard](skills/stitch-ui-react-vite-dashboard/SKILL.md) | Implement React/Vite dashboards with tables, filters and async states. |
+| [stitch-ui-shadcn-components](skills/stitch-ui-shadcn-components/SKILL.md) | Select, migrate and verify shadcn/ui primitives and themes. |
+| [stitch-ui-uview2-components](skills/stitch-ui-uview2-components/SKILL.md) | Convert into uni-app + Vue 2 + uView 2 pages and components. |
+| [stitch-ui-uview-plus-components](skills/stitch-ui-uview-plus-components/SKILL.md) | Convert into uni-app + Vue 3 + uview-plus pages and components. |
+| [stitch-ui-uviewpro-components](skills/stitch-ui-uviewpro-components/SKILL.md) | Convert into uni-app + Vue 3 + uView Pro pages and components. |
+| [stitch-ui-vue-bootstrap-components](skills/stitch-ui-vue-bootstrap-components/SKILL.md) | Convert into Vue/Bootstrap components, checking the target implementation version. |
+| [stitch-ui-vue-element-plus-components](skills/stitch-ui-vue-element-plus-components/SKILL.md) | Convert into Vue 3 / Element Plus pages and components. |
+| [stitch-ui-vue-layui-components](skills/stitch-ui-vue-layui-components/SKILL.md) | Convert into Vue 3 / Layui-Vue pages and components. |
+| [stitch-ui-vue-vant-components](skills/stitch-ui-vue-vant-components/SKILL.md) | Convert into Vue 3 / Vant 4 pages and components. |
+| [stitch-remotion](skills/stitch-remotion/SKILL.md) | Produce Remotion walkthrough videos from Stitch design assets. |
+
+### Skill authoring
+
+| Skill | Responsibility |
+| --- | --- |
+| [stitch-scenario-skill-creator](skills/stitch-scenario-skill-creator/SKILL.md) | Create Stitch prompt skills for a specific business scenario. |
+
+### Legacy compatibility adapters
+
+| Skill | Behavior |
+| --- | --- |
+| [stitch-ui-design-spec-generator](skills/stitch-ui-design-spec-generator/SKILL.md) | Legacy specification entry; forwards spec-only requests to stitch-design-spec. |
+| [stitch-ui-prompt-architect](skills/stitch-ui-prompt-architect/SKILL.md) | Legacy prompt entry; forwards requests to stitch-design-spec. |
+
+Use `stitch-design-spec` for new requests. See the [complete rename map](docs/skill-name-migration.md); source changes do not automatically update installed copies.
+
+### Choosing an entry
+
+- Unsure where to start: `stitch-design-use`.
+- Specifications or prompts: `stitch-design-spec`.
+- Actual screen generation or editing: `stitch-ui-execute`; complete delivery: `stitch-design-harness`.
+- Before generation, use `stitch-ui-contract-uview2` for framework constraints; after design, use `stitch-ui-uview2-components` for implementation.
+- Framework contracts own component constraints; `stitch-design-spec` compiles the final prompt. Framework-style visuals do not prove runnable framework code.
 
 ## 🤖 Supported Agents
 

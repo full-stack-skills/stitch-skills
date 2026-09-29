@@ -156,3 +156,13 @@ demos/_verify.mjs
 _style-research/
 **/design-demos/
 demos/**/*.mp4
+
+# Portable design-spec example manifest
+!skills/stitch-design-spec/examples/instance-center/manifest.json
+
+# Preserve tracked React resources after UI namespace migration
+!skills/stitch-ui-react-components/package.json
+!skills/stitch-ui-react-components/package-lock.json
+!skills/stitch-ui-react-components/resources/style-guide.json
+!skills/stitch-ui-react-native-components/package.json
+!skills/stitch-ui-react-native-components/package-lock.json

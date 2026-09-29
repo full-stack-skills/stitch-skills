@@ -1,168 +1,37 @@
-          
-Stitch MCP 是一套强大的 AI UI 生成工具，基于你提供的 MCP 定义文件，我为你设计了一套完整的 **"AI-Driven UED Workflow" (AI 驱动的用户体验设计工作流)**。
+# Stitch 技能库结构
 
-这份规划旨在将 Stitch 的原子能力封装为 Agent 可调用的高阶技能（Skills），并建立严谨的 "设计 -> 执行" 规范，确保生成的 UI 既符合用户创意，又具备工程落地的高质量。
+本文件说明当前职责分层；完整清单及安装方式以 [中文 README](README.zh-CN.md)、[English README](README.md) 和 `.claude-plugin/plugin.json` 为准。
 
-本地产品当前包含 **39 个规范 Skill**，融合来源为 Google Labs `google-labs-code/stitch-skills` 固定快照 `0337446dadde6f8c94210444e2aa9d546126480f`。这是 PartMe.AI 维护的本地产品，不代表 Google 官方背书；来源和许可见 [NOTICE](NOTICE) 与[上游记录](docs/upstream/google-stitch-skills-0337446.md)。远程 MCP 使用 `https://stitch.googleapis.com/mcp`，并通过环境变量 `STITCH_API_KEY` 向 `X-Goog-Api-Key` 请求头注入密钥；不得在仓库、配置示例、日志或提示词中保存密钥明文。
+当前共44个注册名称：42个主要技能、2个旧规格兼容入口。旧名称映射见[迁移表](docs/skill-name-migration.md)。上游来源与许可见 [NOTICE](NOTICE)。
 
-#### 规范 Skill 索引（39）
+## 设计到实现
 
-| Skill |
-| :--- |
-| `stitch-code-to-design` |
-| `stitch-design-md` |
-| `stitch-extract-design-md` |
-| `stitch-extract-static-html` |
-| `stitch-loop` |
-| `stitch-manage-design-system` |
-| `stitch-mcp-create-project` |
-| `stitch-mcp-generate-screen-from-text` |
-| `stitch-mcp-get-project` |
-| `stitch-mcp-get-screen` |
-| `stitch-mcp-list-projects` |
-| `stitch-mcp-list-screens` |
-| `stitch-react-components` |
-| `stitch-react-native` |
-| `stitch-react-vite-dashboard` |
-| `stitch-remotion` |
-| `stitch-shadcn-ui` |
-| `stitch-site-md` |
-| `stitch-skill-creator` |
-| `stitch-taste-design` |
-| `stitch-ued-guide` |
-| `stitch-ui-design-spec-bootstrap` |
-| `stitch-ui-design-spec-element-plus` |
-| `stitch-ui-design-spec-generator` |
-| `stitch-ui-design-spec-layui` |
-| `stitch-ui-design-spec-uview` |
-| `stitch-ui-design-spec-uviewpro` |
-| `stitch-ui-design-spec-vant` |
-| `stitch-ui-design-variants` |
-| `stitch-ui-designer` |
-| `stitch-ui-prompt-architect` |
-| `stitch-upload-to-stitch` |
-| `stitch-uview-components` |
-| `stitch-uview-plus-components` |
-| `stitch-uviewpro-components` |
-| `stitch-vue-bootstrap-components` |
-| `stitch-vue-element-components` |
-| `stitch-vue-layui-components` |
-| `stitch-vue-vant-components` |
+```mermaid
+flowchart LR
+    U[stitch-design-use 入口] --> S[stitch-design-spec 规格与提示]
+    C[stitch-ui-contract-* 框架约束] --> S
+    S --> E[stitch-ui-execute 屏幕操作]
+    E --> H[stitch-design-harness 交付验证]
+    H --> I[stitch-ui-*-components 代码转换]
+```
 
----
+图表示职责关系，不要求每次请求都执行全部阶段。本地规格编写不调用远程工具；实际生成、上传和代码修改沿用当前任务授权。
 
-### 🎨 Stitch Agent Skills 体系规划
+## 命名分层
 
-我将 Skills 分为三层：**基础原子技能层**（直接映射 MCP）、**高级设计技能层**（Prompt Engineering & 规范化）、**工作流编排层**（全链路落地）。
+- 上层规格与交付入口：stitch-design-spec、stitch-design-harness。
+- 具体UI能力：stitch-ui-*，含执行、风格、指导、变体、页面接力和目标框架实现。
+- 框架约束：stitch-ui-contract-*；代码转换：stitch-ui-<技术栈>-components；专项看板：stitch-ui-react-vite-dashboard。
+- MCP工具适配：stitch-mcp-*；总路由、文档、上传、设置、视频和技能生成等专项入口保持原名。
 
-#### 1. 基础原子技能层 (Atomic Skills)
-这部分直接封装 MCP 工具，供 Agent 在执行具体动作时调用。
+## 规则所有者
 
-| Skill Name | 对应 MCP | 描述与用途 |
-| :--- | :--- | :--- |
-| `stitch_project_create` | `create_project` | **创建项目容器**。用于初始化一个新的设计空间，设定全局的主题（颜色、字体、圆角）和设备类型（Mobile/Desktop）。 |
-| `stitch_project_list` | `list_projects` | **检索项目列表**。用于查找现有的设计项目，支持按所有者筛选。 |
-| `stitch_project_get` | `get_project` | **获取项目详情**。用于读取项目的元数据、全局主题配置等上下文信息。 |
-| `stitch_screen_generate` | `generate_screen_from_text` | **核心生成能力**。输入 Prompt，输出 UI 界面。支持指定模型（Gemini 3 Pro/Flash）和设备类型。 |
-| `stitch_screen_list` | `list_screens` | **浏览页面列表**。查看当前项目下已经生成的页面概览。 |
-| `stitch_screen_get` | `get_screen` | **获取页面详情**。获取特定页面的 HTML 代码、截图 URL 和 Figma 导出文件。 |
+- 页面规格与最终提示词：stitch-design-spec。
+- 框架组件约束：stitch-ui-contract-*；prefix/selector保持已有数据合同。
+- 屏幕操作：stitch-ui-execute；底层MCP工具名不随技能更名。
+- 完整设计交付：stitch-design-harness；运行脚本与既有证据格式保持稳定。
+- 风格提案、表达指导、变体提示、页面接力分别由 style、guide、variants、loop 技能承担。
+- DESIGN.md 来源提取、SITE.md 计划及远程设计系统应用保留各自入口。
+- components 技能负责目标框架代码；框架风格设计图不是代码交付。
 
-#### 2. 高级设计技能层 (Design Logic Skills)
-这部分是你要求的 **"先设计，后执行"** 的核心。Agent 不直接调用生成工具，而是先调用这些 Skill 来“思考”和“规范”设计。
-
-*   **`design_spec_generator` (视觉交互 DNA 规范生成)**
-    *   **输入**: 用户模糊需求（如 "做一个小清新的宠物店 App"）。
-    *   **输出**: 结构化的设计规范 JSON。包含：配色方案（主色、辅色、背景色）、排版系统（字体、字号）、圆角风格、阴影深度、组件风格。
-    *   **作用**: 对应目录下的 `5、视觉与交互 DNA 规范模板.md`，确保项目风格统一。
-
-*   **`ui_prompt_architect` (UI 提示词架构师)**
-    *   **输入**: 页面功能描述 + 设计规范。
-    *   **输出**: **Stitch-Ready Prompt**。这是专门针对 Stitch 优化过的提示词，包含布局结构、组件细节、状态描述。
-    *   **作用**: 将 "登录页" 翻译成 "Mobile screen, minimal style. Top 1/3: Brand logo centered. Middle: Input field for 'Email', Input field for 'Password'. Bottom: Primary button 'Login', Secondary link 'Forgot Password'. White background, #007AFF accent."
-
-#### 3. UX 落地操作指南 (UX Implementation Guide)
-
-这是一套标准作业程序 (SOP)，指导 Agent 如何一步步完成任务。
-
-**阶段一：项目初始化 (Setup)**
-1.  **用户意图分析**: 确定是新项目还是在旧项目新增页面。
-2.  **风格定义**: 调用 `design_spec_generator` 确定 Design Theme。
-3.  **创建/选择项目**: 调用 `stitch_project_create` (带上定义好的 Theme) 或 `stitch_project_list`。
-
-**阶段二：页面设计与生成 (Design & Generate)**
-1.  **需求转化**: 用户输入需求 -> 调用 `ui_prompt_architect` -> 获得 Stitch Prompt。
-2.  **执行生成**: 调用 `stitch_screen_generate` (传入 Stitch Prompt + ProjectID)。
-3.  **结果验证**: 获取生成结果，展示给用户（Screenshot）。
-
-**阶段三：交付与迭代 (Deliver)**
-1.  **代码获取**: 调用 `stitch_screen_get` 获取 HTML/Figma。
-2.  **资产归档**: 将生成的资源记录到项目文档中。
-
----
-
-### 📘 UED 交互指南 (Interaction Guidelines)
-
-为了让 Agent 更好地扮演资深设计师，制定以下交互原则：
-
-**1. 视觉语言标准化 (Visual Vocabulary)**
-Agent 在与 Stitch 交互时，必须使用标准的视觉术语：
-*   **布局**: Header, Footer, Sidebar, Grid, Hero Section, Card Layout.
-*   **组件**: FAB (Floating Action Button), Modal, Toast, Carousel, Accordion, Tab Bar.
-*   **风格**: Flat, Material, Neomorphism, Glassmorphism, Brutalism, Minimalist.
-
-**2. 设备与响应式约束**
-*   **Mobile**: 默认宽度 375px/393px，强调垂直滚动，Touch Target > 44px。
-*   **Desktop**: 强调栅格系统，利用宽屏优势做多栏布局。
-
-**3. 渐进式增强提示 (Progressive Prompting)**
-*   不要试图一次性生成极其复杂的逻辑。
-*   策略：**先骨架，后肉体**。
-    *   *Bad*: "做一个像淘宝一样的电商首页，要有秒杀倒计时和推荐算法流。"
-    *   *Good*: "E-commerce app home screen. Top: Search bar and category icons. Middle: Featured banner carousel. Bottom: 2-column product grid with image, title, and price."
-
----
-
-### 🚀 实战案例：设计一个登录页面
-
-按照要求 #5，演示 Agent 的执行路径：
-
-**用户指令**: "帮我设计一个登录页面，风格要科技感强一点，暗色调。"
-
-**Agent 执行步骤**:
-
-1.  **[Skill: design_spec_generator] 思考与规划**:
-    *   *分析*: 风格=科技感 (Cyberpunk/Futuristic)，色调=Dark Mode。
-    *   *输出设计规范*:
-        *   Theme: Dark
-        *   Primary Color: Neon Blue (#00F0FF) or Neon Purple.
-        *   Font: Inter or Roboto Mono.
-        *   Roundness: Low (Sharp edges).
-
-2.  **[Skill: ui_prompt_architect] 构建提示词**:
-    *   *构建*: 基于上述规范和 "登录页" 功能。
-    *   *输出 Prompt*:
-        > "Dark mode mobile login screen. Cyberpunk aesthetic. Background: Deep dark blue (#0A0A12) with subtle geometric glowing lines.
-        > Center: App logo with neon glow effect.
-        > Form area: Two input fields with dark semi-transparent background and neon blue borders for 'Username' and 'Password'.
-        > Action: Large rectangular 'LOGIN' button, solid neon blue background, white bold text.
-        > Footer: 'Create Account' link in grey text. Tech font style."
-
-3.  **[Skill: stitch_screen_generate] 调用 MCP**:
-    *   `projectId`: [Current Project ID]
-    *   `prompt`: [The Prompt from Step 2]
-    *   `deviceType`: MOBILE
-    *   `modelId`: GEMINI_3_PRO
-
-4.  **[Skill: stitch_screen_get] 获取结果**:
-    *   向用户展示生成的截图，询问是否满意。
-
----
-
-### 下一步计划
-
-如果您认可这个规划，我将开始编写：
-1.  **Agent Skills 代码/Prompt 模板**：实现上述的 `design_spec_generator` 等逻辑。
-2.  **集成 MCP**：确保 Agent 可以通过 `Task` 或 `Tool` 的形式调用 Stitch MCP。
-3.  **文档输出**：生成完整的 `.md` 指南文档，放入您的 `2.0、模板` 目录中。
-
-请确认是否开始执行创建？
+两个旧规格入口仅转交统一入口；历史上游记录保留其发生时的名称，不作为当前注册清单。

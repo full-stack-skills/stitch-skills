@@ -43,3 +43,9 @@
 | `LOCAL_ONLY` | — | `stitch-vue-element-components` |
 | `LOCAL_ONLY` | — | `stitch-vue-layui-components` |
 | `LOCAL_ONLY` | — | `stitch-vue-vant-components` |
+
+## 当前入口迁移
+
+以上表格保留上游融合时的历史映射。页面规格和 enhance-prompt 内容现统一由 `stitch-design-spec` 维护，原 `stitch-ui-design-spec-generator` 与 `stitch-ui-prompt-architect` 仅为兼容适配器；活跃调用者使用新入口。新增完整页面合同、模块模板、覆盖矩阵、任务和可独立阅读的示例；当前包为44个可发现名称（含2个旧名适配器）。
+
+当前活跃名称按最终约定分层：上层保留 design-spec/design-harness，具体UI能力使用 ui-* / ui-contract-*；上述历史映射不回写。完整旧名到新名对应见 [命名迁移表](../skill-name-migration.md)，现行注册和分类以 README 为准。
