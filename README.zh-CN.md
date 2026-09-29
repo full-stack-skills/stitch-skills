@@ -24,7 +24,7 @@
 
 **Stitch MCP 技能** 是一组 AI 编码智能体技能，属于 [Full Stack Skills](https://github.com/partme-ai/full-stack-skills) 生态，由 [PartMe.AI](https://github.com/partme-ai) 维护。
 
-本包包含 **44 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。本产品由 PartMe.AI 维护，在原有本地技能库上融合了 Google Labs `google-labs-code/stitch-skills` 固定快照 `0337446dadde6f8c94210444e2aa9d546126480f` 的部分材料；这不代表 Google 官方背书。来源与许可见 [NOTICE](NOTICE) 和[上游记录](docs/upstream/google-stitch-skills-0337446.md)。
+本包包含 **45 个技能**。每个技能是一个独立的 `SKILL.md` 文件，AI 智能体按需加载。本产品由 PartMe.AI 维护，在原有本地技能库上融合了 Google Labs `google-labs-code/stitch-skills` 固定快照 `0337446dadde6f8c94210444e2aa9d546126480f` 的部分材料；这不代表 Google 官方背书。来源与许可见 [NOTICE](NOTICE) 和[上游记录](docs/upstream/google-stitch-skills-0337446.md)。
 
 ## 📦 安装
 
@@ -66,9 +66,9 @@ export STITCH_API_KEY="<仅在本机设置>"
 
 使用 `stitch-design-spec` 统一编制页面合同与提示词。两个旧名称只保留兼容转交，不再各自维护规则。完整包、full-stack-doc 模块文档和 prompt-only 共用同一套规则；本地编写不执行认证检查。模板、来源与案例见 [技能入口](skills/stitch-design-spec/SKILL.md)。
 
-## 🎯 技能列表 (44)
+## 🎯 技能列表 (45)
 
-**42 个主要技能 + 2 个兼容入口。** 本地规格和提示词无需配置 Stitch 凭据。
+**43 个主要技能 + 2 个兼容入口。** 本地规格和提示词无需配置 Stitch 凭据。
 
 命名约定：上层保留 `stitch-design-spec` / `stitch-design-harness`；具体界面能力使用 `stitch-ui-*`，框架约束使用 `stitch-ui-contract-*`，UI代码转换使用 `stitch-ui-<技术栈>-components`。底层工具保留 `stitch-mcp-*`；总路由、文档和专项操作保留明确的原名。
 
@@ -87,6 +87,7 @@ export STITCH_API_KEY="<仅在本机设置>"
 | [stitch-ui-execute](skills/stitch-ui-execute/SKILL.md) | 执行 Stitch 屏幕的新建、编辑、导入后编辑与变体生成。 |
 | [stitch-ui-style](skills/stitch-ui-style/SKILL.md) | 提出视觉风格、排版、色彩和动效方案，输出 DESIGN.md 提案。 |
 | [stitch-ui-guide](skills/stitch-ui-guide/SKILL.md) | 设计表达、UI/UX 词汇和结构指导。 |
+| [stitch-ui-preview](skills/stitch-ui-preview/SKILL.md) | 同步切页、主题切换与多设备预览对比，附完整可独立运行代码。 |
 | [stitch-ui-variants](skills/stitch-ui-variants/SKILL.md) | 编写设计变体方案与提示词，不直接生成屏幕。 |
 | [stitch-ui-loop](skills/stitch-ui-loop/SKILL.md) | 按授权 backlog 有限接力构建页面并交接进度。 |
 

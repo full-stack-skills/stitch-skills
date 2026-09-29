@@ -39,6 +39,7 @@
     "./skills/stitch-ui-execute",
     "./skills/stitch-ui-guide",
     "./skills/stitch-ui-loop",
+    "./skills/stitch-ui-preview",
     "./skills/stitch-ui-prompt-architect",
     "./skills/stitch-ui-react-components",
     "./skills/stitch-ui-react-native-components",

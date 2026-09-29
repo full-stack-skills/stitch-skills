@@ -24,7 +24,7 @@ English | [简体中文](./README.zh-CN.md)
 
 **Stitch MCP Skills** is a curated collection of Agent Skills for AI coding agents, part of the [Full Stack Skills](https://github.com/partme-ai/full-stack-skills) ecosystem maintained by [PartMe.AI](https://github.com/partme-ai).
 
-This package includes **44 skills**. Each skill is a self-contained `SKILL.md` file that AI agents load on-demand. It is a PartMe.AI-maintained local product that combines the existing library with selected material from Google Labs' `google-labs-code/stitch-skills` snapshot `0337446dadde6f8c94210444e2aa9d546126480f`; this does not imply Google endorsement. See [NOTICE](NOTICE) and the [source record](docs/upstream/google-stitch-skills-0337446.md).
+This package includes **45 skills**. Each skill is a self-contained `SKILL.md` file that AI agents load on-demand. It is a PartMe.AI-maintained local product that combines the existing library with selected material from Google Labs' `google-labs-code/stitch-skills` snapshot `0337446dadde6f8c94210444e2aa9d546126480f`; this does not imply Google endorsement. See [NOTICE](NOTICE) and the [source record](docs/upstream/google-stitch-skills-0337446.md).
 
 ## 📦 Install
 
@@ -66,9 +66,9 @@ export STITCH_API_KEY="<set-locally>"
 
 Restart the agent runtime after setting the variable. Verify connectivity with a read-only project listing before using write tools.
 
-## 🎯 Skills (44)
+## 🎯 Skills (45)
 
-**42 primary skills + 2 compatibility adapters.** Local specification and prompt authoring require no Stitch credentials.
+**43 primary skills + 2 compatibility adapters.** Local specification and prompt authoring require no Stitch credentials.
 
 Naming: keep `stitch-design-spec` / `stitch-design-harness` as upper-level entrypoints; use `stitch-ui-*` for concrete UI work, `stitch-ui-contract-*` for framework constraints, and `stitch-ui-<stack>-components` for UI code conversion. Keep `stitch-mcp-*` for tool adapters; retain explicit names for root routing, documents and specialized operations.
 
@@ -87,6 +87,7 @@ Naming: keep `stitch-design-spec` / `stitch-design-harness` as upper-level entry
 | [stitch-ui-execute](skills/stitch-ui-execute/SKILL.md) | Execute screen generation, editing, post-import editing and variants. |
 | [stitch-ui-style](skills/stitch-ui-style/SKILL.md) | Propose visual style, typography, colors and motion in DESIGN.md. |
 | [stitch-ui-guide](skills/stitch-ui-guide/SKILL.md) | Provide UI/UX vocabulary and guidance for design descriptions. |
+| [stitch-ui-preview](skills/stitch-ui-preview/SKILL.md) | Synchronized pages/themes and multi-device preview comparison, with a complete standalone application. |
 | [stitch-ui-variants](skills/stitch-ui-variants/SKILL.md) | Prepare alternative design prompts without executing screen generation. |
 | [stitch-ui-loop](skills/stitch-ui-loop/SKILL.md) | Build pages through a bounded, authorized backlog and hand off progress. |
 

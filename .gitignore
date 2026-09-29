@@ -166,3 +166,6 @@ demos/**/*.mp4
 !skills/stitch-ui-react-components/resources/style-guide.json
 !skills/stitch-ui-react-native-components/package.json
 !skills/stitch-ui-react-native-components/package-lock.json
+
+# Standalone preview capability-alignment baseline
+!skills/stitch-ui-preview/assets/device-preview/review/alignment-baseline/baseline.json

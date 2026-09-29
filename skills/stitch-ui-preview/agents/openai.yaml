@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Preview"
+  short_description: "为 Stitch 界面提供同步切页、主题与多设备布局预览对比"
+  default_prompt: "使用 $stitch-ui-preview 为现有 Stitch 导出界面建立多设备同步预览，保留来源并验证差异。"
