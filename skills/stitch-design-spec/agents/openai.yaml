@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Design Spec"
+  short_description: "当用户要为 Stitch 将 PRD 或功能设计转成逐页规格、编写模块设计提示词、把已有规格转成提示词或润色模糊 UI 想法时…"
+  default_prompt: "使用 $stitch-design-spec，围绕“当用户要为 Stitch 将 PRD 或功能设计转成逐页规格、编写模块设计提示词、把已有规格转成提示词或润色模糊 UI 想法时”处理我的当前需求。"

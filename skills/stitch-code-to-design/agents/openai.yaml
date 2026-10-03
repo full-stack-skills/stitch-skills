@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Code To Design"
+  short_description: "将已有前端应用迁入 Stitch；用户要求把 React、Vue、Angular 等页面导入、同步为 Stitch 设计时触发"
+  default_prompt: "使用 $stitch-code-to-design，围绕“将已有前端应用迁入 Stitch；用户要求把 React、Vue、Angular 等页面导入、同步为 Stitch 设计时触发”处理我的当前需求。"

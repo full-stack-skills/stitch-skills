@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Contract Uviewpro"
+  short_description: "uView Pro design spec for Stitch"
+  default_prompt: "Use $stitch-ui-contract-uviewpro to help with my current task: uView Pro design spec for Stitch."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Delete Project"
+  short_description: "安全删除一个明确指定的 Stitch 项目；仅在用户明确要求删除远程项目时使用，先预览完整资源名并再次取得批准，删除后只读对账"
+  default_prompt: "使用 $stitch-delete-project，围绕“安全删除一个明确指定的 Stitch 项目；仅在用户明确要求删除远程项目时使用，先预览完整资源名并再次取得批准，删除后只读对账”处理我的当前需求。"

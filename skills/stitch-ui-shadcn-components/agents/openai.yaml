@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Shadcn Components"
+  short_description: "为 Stitch 来源的 React 页面选择、迁移和验证 shadcn/ui 原语、主题和 registry 内容时触发"
+  default_prompt: "使用 $stitch-ui-shadcn-components，围绕“为 Stitch 来源的 React 页面选择、迁移和验证 shadcn/ui 原语、主题和 registry 内容时触发”处理我的当前需求。"

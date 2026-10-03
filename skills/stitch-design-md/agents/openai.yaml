@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Design Md"
+  short_description: "从 Stitch 屏幕或用户提供的 HTML/截图整理并验证语义 DESIGN.md；需要可复用视觉语言与来源说明时触发"
+  default_prompt: "使用 $stitch-design-md，围绕“从 Stitch 屏幕或用户提供的 HTML/截图整理并验证语义 DESIGN.md；需要可复用视觉语言与来源说明时触发”处理我的当前需求。"

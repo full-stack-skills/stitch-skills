@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Contract Layui"
+  short_description: "Layui-Vue design spec for Stitch"
+  default_prompt: "Use $stitch-ui-contract-layui to help with my current task: Layui-Vue design spec for Stitch."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Extract Design Md"
+  short_description: "从前端源码提取可追踪的 DESIGN.md；在应用无法构建、需要审计 React/Vue/Svelte/Angular/CSS…"
+  default_prompt: "使用 $stitch-extract-design-md，围绕“从前端源码提取可追踪的 DESIGN.md；在应用无法构建、需要审计 React/Vue/Svelte/Angular/CSS”处理我的当前需求。"

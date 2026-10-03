@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch MCP Generate Screen From Text"
+  short_description: "调用 Stitch generate_screen_from_text 将已准备的页面提示生成视觉屏幕；用户明确要求用…"
+  default_prompt: "使用 $stitch-mcp-generate-screen-from-text，围绕“调用 Stitch generate_screen_from_text 将已准备的页面提示生成视觉屏幕；用户明确要求用”处理我的当前需求。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Execute"
+  short_description: "编排 Stitch 屏幕的新建、导入、编辑或变体生成；用户明确要求用 Stitch 实际创建或修改设计时触发"
+  default_prompt: "使用 $stitch-ui-execute，围绕“编排 Stitch 屏幕的新建、导入、编辑或变体生成；用户明确要求用 Stitch 实际创建或修改设计时触发”处理我的当前需求。"

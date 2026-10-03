@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI React Vite Dashboard"
+  short_description: "把 Stitch 设计实现为 React/Vite 数据看板；当需 TanStack Query、表格、筛选、异步状态和设计…"
+  default_prompt: "使用 $stitch-ui-react-vite-dashboard，围绕“把 Stitch 设计实现为 React/Vite 数据看板；当需 TanStack Query、表格、筛选、异步状态和设计”处理我的当前需求。"

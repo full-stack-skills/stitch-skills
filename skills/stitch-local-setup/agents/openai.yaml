@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Local Setup"
+  short_description: "本地首次使用 Stitch Design、缺少 STITCH_API_KEY 或认证失败时，指导 Windows、macOS、…"
+  default_prompt: "使用 $stitch-local-setup，围绕“本地首次使用 Stitch Design、缺少 STITCH_API_KEY 或认证失败时，指导 Windows、macOS”处理我的当前需求。"

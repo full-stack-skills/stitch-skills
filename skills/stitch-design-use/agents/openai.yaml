@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Design Use"
+  short_description: "Stitch Design 根路由；当用户要用 Stitch 完成从认证、读取、生成、设计系统、资产处理到完整交付的任务时，选…"
+  default_prompt: "使用 $stitch-design-use，围绕“Stitch Design 根路由；当用户要用 Stitch 完成从认证、读取、生成、设计系统、资产处理到完整交付的任务时，选”处理我的当前需求。"

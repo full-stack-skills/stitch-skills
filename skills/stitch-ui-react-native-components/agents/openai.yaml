@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI React Native Components"
+  short_description: "将 Stitch 屏幕转为 React Native 或同步现有原生组件；目标是 iOS/Android 的 View、…"
+  default_prompt: "使用 $stitch-ui-react-native-components，围绕“将 Stitch 屏幕转为 React Native 或同步现有原生组件；目标是 iOS/Android 的 View”处理我的当前需求。"

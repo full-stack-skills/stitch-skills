@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI React Components"
+  short_description: "将 Stitch HTML/屏幕转换或同步为 React/Vite 组件；需要 token、组件 Props 和导航一致性校验…"
+  default_prompt: "使用 $stitch-ui-react-components，围绕“将 Stitch HTML/屏幕转换或同步为 React/Vite 组件；需要 token、组件 Props 和导航一致性校验”处理我的当前需求。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch MCP Get Screen"
+  short_description: "Retrieves the full details of a specific screen, including…"
+  default_prompt: "Use $stitch-mcp-get-screen to help with my current task: Retrieves the full details of a specific screen, including HTML code."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Upload"
+  short_description: "将已授权的本地图片或 HTML 安全上传到指定 Stitch 项目，并将 Markdown 路由到远程…"
+  default_prompt: "使用 $stitch-upload，围绕“将已授权的本地图片或 HTML 安全上传到指定 Stitch 项目，并将 Markdown 路由到远程”处理我的当前需求。"

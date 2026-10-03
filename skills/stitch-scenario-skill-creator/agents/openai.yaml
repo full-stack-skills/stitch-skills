@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Scenario Skill Creator"
+  short_description: "A factory skill for creating new Stitch Scenario Skills"
+  default_prompt: "Use $stitch-scenario-skill-creator to help with my current task: A factory skill for creating new Stitch Scenario Skills."

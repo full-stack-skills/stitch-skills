@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Remotion"
+  short_description: "将 Stitch 屏幕资产编排成 Remotion 走查视频；用户需要转场、缩放、字幕或旁白演示时触发"
+  default_prompt: "使用 $stitch-remotion，围绕“将 Stitch 屏幕资产编排成 Remotion 走查视频；用户需要转场、缩放、字幕或旁白演示时触发”处理我的当前需求。"

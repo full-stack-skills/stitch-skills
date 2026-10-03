@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Guide"
+  short_description: "UED guidelines, visual vocabulary, and prompt structure for…"
+  default_prompt: "Use $stitch-ui-guide to help with my current task: UED guidelines, visual vocabulary, and prompt structure for Stitch."

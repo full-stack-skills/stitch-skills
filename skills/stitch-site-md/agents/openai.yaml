@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Site Md"
+  short_description: "将站点需求和现有页面整理为 .stitch/SITE.md；当需为 Stitch Build Loop 确定网站身份、导航、页…"
+  default_prompt: "使用 $stitch-site-md，围绕“将站点需求和现有页面整理为 .stitch/SITE.md；当需为 Stitch Build Loop 确定网站身份、导航、页”处理我的当前需求。"

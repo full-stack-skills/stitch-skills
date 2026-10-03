@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Manage Design System"
+  short_description: "查询、创建、更新或应用 Stitch 项目级设计系统；当已有 DESIGN.md 要关联远程项目，或需对指定屏幕应用现有系统时…"
+  default_prompt: "使用 $stitch-manage-design-system，围绕“查询、创建、更新或应用 Stitch 项目级设计系统；当已有 DESIGN.md 要关联远程项目，或需对指定屏幕应用现有系统时”处理我的当前需求。"

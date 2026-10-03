@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Loop"
+  short_description: "根据 .stitch/SITE.md、DESIGN.md 和 next-prompt.md 接力完成已授权的 Stitch 页…"
+  default_prompt: "使用 $stitch-ui-loop，围绕“根据 .stitch/SITE.md、DESIGN.md 和 next-prompt.md 接力完成已授权的 Stitch 页”处理我的当前需求。"

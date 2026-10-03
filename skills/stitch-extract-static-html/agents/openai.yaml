@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch Extract Static HTML"
+  short_description: "从本地前端页面提取静态 HTML 并内联可获取资产；在需要保存指定 UI 状态、离线检查或为 Stitch 准备上传文件时触发"
+  default_prompt: "使用 $stitch-extract-static-html，围绕“从本地前端页面提取静态 HTML 并内联可获取资产；在需要保存指定 UI 状态、离线检查或为 Stitch 准备上传文件时触发”处理我的当前需求。"

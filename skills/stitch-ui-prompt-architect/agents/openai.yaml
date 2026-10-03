@@ -1,0 +1,7 @@
+interface:
+  display_name: "Stitch UI Prompt Architect"
+  short_description: "仅在用户或旧工作流明确调用 stitch-ui-prompt-architect 时使用的兼容入口；按名称转交 stitch…"
+  default_prompt: "使用 $stitch-ui-prompt-architect，围绕“仅在用户或旧工作流明确调用 stitch-ui-prompt-architect 时使用的兼容入口；按名称转交 stitch”处理我的当前需求。"
+
+policy:
+  allow_implicit_invocation: false

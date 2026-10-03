@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stitch UI Style"
+  short_description: "为 Stitch 编写有明确视觉取向的 DESIGN.md 提案；当用户要求更有特色的排版、色彩、布局和动效方案时触发"
+  default_prompt: "使用 $stitch-ui-style，围绕“为 Stitch 编写有明确视觉取向的 DESIGN.md 提案；当用户要求更有特色的排版、色彩、布局和动效方案时触发”处理我的当前需求。"
